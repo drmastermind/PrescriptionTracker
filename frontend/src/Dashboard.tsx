@@ -253,7 +253,11 @@ export default function Dashboard({ currentUser, onLogout, darkMode, onToggleDar
         <AddPrescriptionModal
           userId={selectedUserId}
           medications={medications}
-          onCreated={() => { setShowAdd(false); fetchPrescriptions() }}
+          onCreated={(updatedMeds) => {
+            if (updatedMeds) setMedications(updatedMeds)
+            setShowAdd(false)
+            fetchPrescriptions()
+          }}
           onClose={() => setShowAdd(false)}
         />
       )}

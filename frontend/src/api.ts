@@ -152,6 +152,10 @@ export async function lookupMedications(): Promise<MedicationLookup[]> {
   return request('/lookups/medications')
 }
 
+export async function createMedication(data: { medication_name: string; generic_name?: string; strength?: string; form?: string; brand_name?: string }): Promise<MedicationLookup> {
+  return request('/medications', { method: 'POST', body: JSON.stringify(data) })
+}
+
 // Prescriptions
 export interface Prescription {
   prescription_id: number

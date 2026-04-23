@@ -222,8 +222,9 @@ export default function UsersPanel({ currentUserId }: Props) {
                 Resetting password for: <span className="text-white">{users.find(u => u.user_id === resetUserId)?.login_name}</span>
               </p>
               <div className="flex flex-col gap-1.5">
-                <label className="text-sm text-gray-400">New password</label>
-                <input type="password" value={resetPassword} onChange={e => setResetPassword(e.target.value)} required
+                <label className="text-sm text-gray-400">New password <span className="text-gray-600">(min 12 characters)</span></label>
+                <input type="password" value={resetPassword} onChange={e => setResetPassword(e.target.value)}
+                  required minLength={12}
                   className="bg-gray-800 text-white border border-gray-700 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500" />
               </div>
               {resetError && (

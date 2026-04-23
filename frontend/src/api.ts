@@ -23,8 +23,13 @@ async function request<T>(path: string, options: RequestInit = {}): Promise<T> {
 
   if (!res.ok) {
     const body = await res.json().catch(() => ({}))
-    const msg = body?.error?.message ?? `HTTP ${res.status}`
-    throw new ApiError(res.status, body?.error?.code ?? 'ERROR', msg)
+    const err = body?.error ?? {}
+    // If there are field-level details, surface the first one as the message
+    const detail = err.details?.[0]
+    const msg = detail
+      ? `${detail.field ? detail.field + ': ' : ''}${detail.issue}`
+      : (err.message ?? `HTTP ${res.status}`)
+    throw new ApiError(res.status, err.code ?? 'ERROR', msg)
   }
 
   if (res.status === 204) return undefined as T

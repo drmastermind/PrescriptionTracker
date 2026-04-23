@@ -1,0 +1,34 @@
+[project]
+name = "prescription-tracker-backend"
+version = "0.1.0"
+description = "Add your description here"
+requires-python = ">=3.13"
+dependencies = [
+    "aiofiles>=25.1.0",
+    "alembic>=1.18.4",
+    "fastapi>=0.136.0",
+    "passlib[argon2]>=1.7.4",
+    "pydantic-settings>=2.14.0",
+    "pydantic[email]>=2.13.3",
+    "python-jose[cryptography]>=3.5.0",
+    "python-multipart>=0.0.26",
+    "slowapi>=0.1.9",
+    "sqlalchemy[pymysql]>=2.0.49",
+    "uvicorn[standard]>=0.46.0",
+]
+
+[tool.uv]
+package = true
+
+[tool.setuptools.packages.find]
+include = ["app*"]
+
+[project.scripts]
+serve = "app.serve:main"
+
+[dependency-groups]
+dev = [
+    "httpx>=0.28.1",
+    "pytest>=9.0.3",
+    "pytest-httpx>=0.36.2",
+]

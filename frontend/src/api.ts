@@ -49,11 +49,10 @@ export interface TokenResponse {
 }
 
 export async function login(login_name: string, password: string): Promise<TokenResponse> {
-  const body = new URLSearchParams({ username: login_name, password })
   const res = await fetch(`${BASE}/auth/login`, {
     method: 'POST',
-    headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
-    body,
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ login_name, password }),
   })
   if (!res.ok) {
     const data = await res.json().catch(() => ({}))
@@ -77,6 +76,52 @@ export interface CurrentUser {
 
 export async function getMe(): Promise<CurrentUser> {
   return request('/auth/me')
+}
+
+export async function changePassword(current_password: string, new_password: string): Promise<void> {
+  return request('/auth/change-password', {
+    method: 'POST',
+    body: JSON.stringify({ current_password, new_password }),
+  })
+}
+
+export async function adminResetPassword(userId: number, new_password: string): Promise<void> {
+  return request(`/auth/admin-reset-password/${userId}`, {
+    method: 'POST',
+    body: JSON.stringify({ new_password }),
+  })
+}
+
+// Users (admin)
+export interface User {
+  user_id: number
+  user_name: string
+  login_name: string
+  email: string
+  email_verified: boolean
+  role: string
+  is_active: boolean
+  created_at: string
+  updated_at: string
+}
+
+export interface PaginatedUsers {
+  items: User[]
+  total: number
+  page: number
+  size: number
+  pages: number
+}
+
+export async function listUsers(page = 1, size = 50): Promise<PaginatedUsers> {
+  return request(`/users?page=${page}&size=${size}`)
+}
+
+export async function updateUser(userId: number, data: Partial<{ user_name: string; email: string; login_name: string; role: string; is_active: boolean }>): Promise<User> {
+  return request(`/users/${userId}`, {
+    method: 'PATCH',
+    body: JSON.stringify(data),
+  })
 }
 
 // Lookups
@@ -107,7 +152,7 @@ export interface Prescription {
   prescription_id: number
   user_id: number
   medication_id: number
-  medication_name: string
+  medication: { medication_id: number; medication_name: string }
   dosage?: string
   frequency?: string
   doctor?: string
@@ -130,15 +175,6 @@ export interface PrescriptionCreate {
   dosage?: string
   frequency?: string
   doctor?: string
-  prescribed_date?: string
-  start_date?: string
-  end_date?: string
-  quantity?: number
-  refills_remaining?: number
-  route?: string
-  reason?: string
-  pharmacy?: string
-  notes?: string
 }
 
 export interface PaginatedPrescriptions {

@@ -13,6 +13,10 @@ interface EditState {
   is_active: boolean
 }
 
+function fmtDate(iso: string) {
+  return new Date(iso).toLocaleString(undefined, { dateStyle: 'short', timeStyle: 'short' })
+}
+
 export default function UsersPanel({ currentUserId }: Props) {
   const [users, setUsers] = useState<User[]>([])
   const [loading, setLoading] = useState(true)
@@ -26,9 +30,7 @@ export default function UsersPanel({ currentUserId }: Props) {
   const [resetError, setResetError] = useState('')
   const [toast, setToast] = useState('')
 
-  useEffect(() => {
-    load()
-  }, [])
+  useEffect(() => { load() }, [])
 
   async function load() {
     setLoading(true)
@@ -57,10 +59,10 @@ export default function UsersPanel({ currentUserId }: Props) {
     if (!editState) return
     setSaving(true)
     try {
-      const updated = await updateUser(userId, editState)
-      setUsers(prev => prev.map(u => u.user_id === userId ? updated : u))
+      await updateUser(userId, editState)
       setEditingId(null)
       setEditState(null)
+      await load()
       showToast('User updated.')
     } catch (err) {
       alert(err instanceof ApiError ? err.message : 'Failed to save')
@@ -78,7 +80,8 @@ export default function UsersPanel({ currentUserId }: Props) {
       await adminResetPassword(resetUserId, resetPassword)
       setResetUserId(null)
       setResetPassword('')
-      showToast('Password reset.')
+      await load()
+      showToast('Password reset successfully.')
     } catch (err) {
       setResetError(err instanceof ApiError ? err.message : 'Failed to reset password')
     } finally {
@@ -117,6 +120,7 @@ export default function UsersPanel({ currentUserId }: Props) {
                 <th className="px-4 py-2 font-medium hidden md:table-cell">Email</th>
                 <th className="px-4 py-2 font-medium">Role</th>
                 <th className="px-4 py-2 font-medium">Status</th>
+                <th className="px-4 py-2 font-medium hidden lg:table-cell">Updated</th>
                 <th className="px-4 py-2 font-medium w-32"></th>
               </tr>
             </thead>
@@ -175,6 +179,9 @@ export default function UsersPanel({ currentUserId }: Props) {
                           {u.is_active ? 'Active' : 'Inactive'}
                         </span>
                       )}
+                    </td>
+                    <td className="px-4 py-2 hidden lg:table-cell">
+                      <span className="text-xs text-gray-500">{fmtDate(u.updated_at)}</span>
                     </td>
                     <td className="px-4 py-2">
                       <div className="flex gap-2">

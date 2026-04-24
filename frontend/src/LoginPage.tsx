@@ -98,6 +98,28 @@ export default function LoginPage({ onLogin }: Props) {
             </button>
           ))}
         </div>
+            <input
+              type="text"
+              value={loginName}
+              onChange={e => setLoginName(e.target.value)}
+              required
+              autoFocus
+              className="font-sans bg-paper-100 dark:bg-midnight-700 text-paper-950 dark:text-paper-100 border border-paper-300 dark:border-midnight-500 rounded-lg px-3.5 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-gold-500/30 focus:border-gold-500/60 transition-all placeholder-paper-400 dark:placeholder-midnight-400"
+            />
+          </div>
+          <div className="flex flex-col gap-2">
+            <label className="font-sans text-[0.7rem] font-semibold uppercase tracking-widest text-paper-600 dark:text-midnight-300">
+              Password
+            </label>
+            <input
+              type="password"
+              value={password}
+              onChange={e => setPassword(e.target.value)}
+              required
+              className="font-sans bg-paper-100 dark:bg-midnight-700 text-paper-950 dark:text-paper-100 border border-paper-300 dark:border-midnight-500 rounded-lg px-3.5 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-gold-500/30 focus:border-gold-500/60 transition-all"
+            />
+          </div>
+
 
         <div className="bg-paper-50 dark:bg-midnight-800 rounded-2xl rounded-tl-none border border-paper-200 dark:border-midnight-600 p-7 shadow-xl shadow-paper-300/30 dark:shadow-midnight-950/60">
           {mode === 'login' ? (
@@ -195,6 +217,11 @@ export default function LoginPage({ onLogin }: Props) {
             </form>
           )}
         </div>
+          >
+            {loading ? 'Signing in...' : 'Sign in'}
+          </button>
+        </form>
+
       </div>
     </div>
   )

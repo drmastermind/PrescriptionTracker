@@ -11,7 +11,7 @@ from starlette.exceptions import HTTPException as StarletteHTTPException
 
 from app.core.config import settings
 from app.core.errors import http_exception_handler, validation_exception_handler
-from app.api.v1.endpoints import auth, users, medications, prescriptions, lookups, ops
+from app.api.v1.endpoints import auth, users, medications, prescriptions, lookups, ops, api_keys
 
 
 def _bootstrap_admin() -> None:
@@ -78,6 +78,7 @@ app.include_router(users.router)
 app.include_router(medications.router)
 app.include_router(prescriptions.router)
 app.include_router(lookups.router)
+app.include_router(api_keys.router)
 
 _static = Path(__file__).parent.parent / "static"
 app.mount("/static", StaticFiles(directory=str(_static)), name="static")

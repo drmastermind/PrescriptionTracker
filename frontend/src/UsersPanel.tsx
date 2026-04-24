@@ -17,6 +17,10 @@ function fmtDate(iso: string) {
   return new Date(iso).toLocaleString(undefined, { dateStyle: 'short', timeStyle: 'short' })
 }
 
+const editInputCls = 'font-sans bg-paper-100 dark:bg-midnight-700 text-paper-950 dark:text-paper-100 border border-paper-300 dark:border-midnight-500 rounded-lg px-2.5 py-1.5 text-xs focus:outline-none focus:ring-2 focus:ring-gold-500/30 focus:border-gold-500/60 transition-all'
+const modalInputCls = 'font-sans bg-paper-100 dark:bg-midnight-700 text-paper-950 dark:text-paper-100 border border-paper-300 dark:border-midnight-500 rounded-lg px-3.5 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-gold-500/30 focus:border-gold-500/60 transition-all w-full'
+const labelCls = 'font-sans text-[0.68rem] font-semibold uppercase tracking-widest text-paper-600 dark:text-midnight-300'
+
 export default function UsersPanel({ currentUserId }: Props) {
   const [users, setUsers] = useState<User[]>([])
   const [loading, setLoading] = useState(true)
@@ -94,34 +98,55 @@ export default function UsersPanel({ currentUserId }: Props) {
     setTimeout(() => setToast(''), 3000)
   }
 
-  if (loading) return <div className="text-sm text-gray-500 py-10 text-center">Loading...</div>
-  if (error) return <div className="text-sm text-red-400 py-4">{error}</div>
+  if (loading) return (
+    <div className="py-12 text-center">
+      <span className="font-mono text-[0.62rem] uppercase tracking-widest text-paper-400 dark:text-midnight-400">Loading...</span>
+    </div>
+  )
+  if (error) return (
+    <div className="py-4 text-sm text-rose-600 dark:text-rose-400">{error}</div>
+  )
 
   return (
     <div className="flex flex-col gap-4">
+      {/* Toast */}
       {toast && (
-        <div className="fixed bottom-4 right-4 bg-green-800 text-green-100 text-sm px-4 py-2 rounded-lg shadow-lg z-50">
+        <div className="fixed bottom-5 right-5 font-sans bg-teal-900/90 dark:bg-teal-900/95 text-teal-200 text-xs font-medium px-4 py-2.5 rounded-xl shadow-lg z-50 border border-teal-700/40">
           {toast}
         </div>
       )}
 
-      <div className="bg-gray-900 border border-gray-800 rounded-xl overflow-hidden">
-        <div className="px-4 py-3 border-b border-gray-800 flex items-center justify-between">
-          <h2 className="text-sm font-medium text-white">Users</h2>
-          <span className="text-xs text-gray-500">{users.length} total</span>
+      <div className="bg-paper-50 dark:bg-midnight-800 border border-paper-200 dark:border-midnight-600 rounded-xl overflow-hidden shadow-sm">
+        <div className="px-5 py-3.5 border-b border-paper-200 dark:border-midnight-600 flex items-center justify-between">
+          <h2 className="font-sans text-sm font-semibold text-paper-950 dark:text-paper-100">Users</h2>
+          <span className="font-mono text-[0.62rem] text-paper-400 dark:text-midnight-400 tracking-widest">
+            {users.length} total
+          </span>
         </div>
 
         <div className="overflow-x-auto">
           <table className="w-full text-sm">
             <thead>
-              <tr className="text-left text-xs text-gray-500 border-b border-gray-800">
-                <th className="px-4 py-2 font-medium">Display name</th>
-                <th className="px-4 py-2 font-medium">Login</th>
-                <th className="px-4 py-2 font-medium hidden md:table-cell">Email</th>
-                <th className="px-4 py-2 font-medium">Role</th>
-                <th className="px-4 py-2 font-medium">Status</th>
-                <th className="px-4 py-2 font-medium hidden lg:table-cell">Updated</th>
-                <th className="px-4 py-2 font-medium w-32"></th>
+              <tr className="border-b border-paper-200 dark:border-midnight-600 bg-paper-100/50 dark:bg-midnight-750/40">
+                <th className="px-5 py-3 text-left font-mono text-[0.6rem] uppercase tracking-widest text-paper-500 dark:text-midnight-400 font-medium">
+                  Display name
+                </th>
+                <th className="px-5 py-3 text-left font-mono text-[0.6rem] uppercase tracking-widest text-paper-500 dark:text-midnight-400 font-medium">
+                  Login
+                </th>
+                <th className="px-5 py-3 text-left font-mono text-[0.6rem] uppercase tracking-widest text-paper-500 dark:text-midnight-400 font-medium hidden md:table-cell">
+                  Email
+                </th>
+                <th className="px-5 py-3 text-left font-mono text-[0.6rem] uppercase tracking-widest text-paper-500 dark:text-midnight-400 font-medium">
+                  Role
+                </th>
+                <th className="px-5 py-3 text-left font-mono text-[0.6rem] uppercase tracking-widest text-paper-500 dark:text-midnight-400 font-medium">
+                  Status
+                </th>
+                <th className="px-5 py-3 text-left font-mono text-[0.6rem] uppercase tracking-widest text-paper-500 dark:text-midnight-400 font-medium hidden lg:table-cell">
+                  Updated
+                </th>
+                <th className="px-5 py-3 w-36" />
               </tr>
             </thead>
             <tbody>
@@ -129,79 +154,115 @@ export default function UsersPanel({ currentUserId }: Props) {
                 const isEditing = editingId === u.user_id
                 const isSelf = u.user_id === currentUserId
                 return (
-                  <tr key={u.user_id} className="border-b border-gray-800 last:border-0 hover:bg-gray-800/30">
-                    <td className="px-4 py-2">
+                  <tr key={u.user_id} className="border-b border-paper-200 dark:border-midnight-700 last:border-0 hover:bg-paper-100 dark:hover:bg-midnight-750/60 transition-colors">
+                    <td className="px-5 py-3">
                       {isEditing && editState ? (
-                        <input value={editState.user_name} onChange={e => setEditState({ ...editState, user_name: e.target.value })}
-                          className="bg-gray-800 text-white border border-gray-700 rounded px-2 py-1 text-xs w-32 focus:outline-none focus:ring-1 focus:ring-indigo-500" />
+                        <input
+                          value={editState.user_name}
+                          onChange={e => setEditState({ ...editState, user_name: e.target.value })}
+                          className={`${editInputCls} w-32`}
+                        />
                       ) : (
-                        <span className="text-white">{u.user_name}</span>
+                        <span className="font-sans text-paper-950 dark:text-paper-100 font-medium">{u.user_name}</span>
                       )}
                     </td>
-                    <td className="px-4 py-2">
+                    <td className="px-5 py-3">
                       {isEditing && editState ? (
-                        <input value={editState.login_name} onChange={e => setEditState({ ...editState, login_name: e.target.value })}
-                          className="bg-gray-800 text-white border border-gray-700 rounded px-2 py-1 text-xs w-28 focus:outline-none focus:ring-1 focus:ring-indigo-500" />
+                        <input
+                          value={editState.login_name}
+                          onChange={e => setEditState({ ...editState, login_name: e.target.value })}
+                          className={`${editInputCls} w-28`}
+                        />
                       ) : (
-                        <span className="text-gray-300 font-mono text-xs">{u.login_name}</span>
+                        <span className="font-mono text-xs text-paper-600 dark:text-midnight-300">{u.login_name}</span>
                       )}
                     </td>
-                    <td className="px-4 py-2 hidden md:table-cell">
+                    <td className="px-5 py-3 hidden md:table-cell">
                       {isEditing && editState ? (
-                        <input value={editState.email} onChange={e => setEditState({ ...editState, email: e.target.value })}
-                          className="bg-gray-800 text-white border border-gray-700 rounded px-2 py-1 text-xs w-40 focus:outline-none focus:ring-1 focus:ring-indigo-500" />
+                        <input
+                          value={editState.email}
+                          onChange={e => setEditState({ ...editState, email: e.target.value })}
+                          className={`${editInputCls} w-44`}
+                        />
                       ) : (
-                        <span className="text-gray-400 text-xs">{u.email}</span>
+                        <span className="font-sans text-xs text-paper-500 dark:text-midnight-400">{u.email}</span>
                       )}
                     </td>
-                    <td className="px-4 py-2">
+                    <td className="px-5 py-3">
                       {isEditing && editState && !isSelf ? (
-                        <select value={editState.role} onChange={e => setEditState({ ...editState, role: e.target.value })}
-                          className="bg-gray-800 text-white border border-gray-700 rounded px-2 py-1 text-xs focus:outline-none focus:ring-1 focus:ring-indigo-500">
+                        <select
+                          value={editState.role}
+                          onChange={e => setEditState({ ...editState, role: e.target.value })}
+                          className={editInputCls}
+                        >
                           <option value="normal">normal</option>
                           <option value="admin">admin</option>
                         </select>
                       ) : (
-                        <span className={`text-xs px-2 py-0.5 rounded-full ${u.role === 'admin' ? 'bg-indigo-900 text-indigo-300' : 'bg-gray-800 text-gray-400'}`}>
+                        <span className={`font-mono text-[0.58rem] uppercase tracking-wider px-2.5 py-1 rounded-full border ${
+                          u.role === 'admin'
+                            ? 'bg-gold-900/15 dark:bg-gold-950/60 text-gold-600 dark:text-gold-400 border-gold-600/20 dark:border-gold-700/40'
+                            : 'bg-paper-200 dark:bg-midnight-700 text-paper-500 dark:text-midnight-300 border-paper-300 dark:border-midnight-600'
+                        }`}>
                           {u.role}
                         </span>
                       )}
                     </td>
-                    <td className="px-4 py-2">
+                    <td className="px-5 py-3">
                       {isEditing && editState && !isSelf ? (
-                        <select value={String(editState.is_active)} onChange={e => setEditState({ ...editState, is_active: e.target.value === 'true' })}
-                          className="bg-gray-800 text-white border border-gray-700 rounded px-2 py-1 text-xs focus:outline-none focus:ring-1 focus:ring-indigo-500">
+                        <select
+                          value={String(editState.is_active)}
+                          onChange={e => setEditState({ ...editState, is_active: e.target.value === 'true' })}
+                          className={editInputCls}
+                        >
                           <option value="true">Active</option>
                           <option value="false">Inactive</option>
                         </select>
                       ) : (
-                        <span className={`text-xs px-2 py-0.5 rounded-full ${u.is_active ? 'bg-green-900 text-green-300' : 'bg-gray-800 text-gray-400'}`}>
+                        <span className={`font-mono text-[0.58rem] uppercase tracking-wider px-2.5 py-1 rounded-full border ${
+                          u.is_active
+                            ? 'bg-teal-900/15 dark:bg-teal-900/30 text-teal-600 dark:text-teal-400 border-teal-600/20 dark:border-teal-900/50'
+                            : 'bg-paper-200 dark:bg-midnight-700 text-paper-500 dark:text-midnight-300 border-paper-300 dark:border-midnight-600'
+                        }`}>
                           {u.is_active ? 'Active' : 'Inactive'}
                         </span>
                       )}
                     </td>
-                    <td className="px-4 py-2 hidden lg:table-cell">
-                      <span className="text-xs text-gray-500">{fmtDate(u.updated_at)}</span>
+                    <td className="px-5 py-3 hidden lg:table-cell">
+                      <span className="font-mono text-[0.62rem] text-paper-400 dark:text-midnight-500">
+                        {fmtDate(u.updated_at)}
+                      </span>
                     </td>
-                    <td className="px-4 py-2">
-                      <div className="flex gap-2">
+                    <td className="px-5 py-3">
+                      <div className="flex gap-3 items-center">
                         {isEditing ? (
                           <>
-                            <button onClick={() => saveEdit(u.user_id)} disabled={saving}
-                              className="text-xs text-indigo-400 hover:text-indigo-300 disabled:opacity-40 transition-colors">
+                            <button
+                              onClick={() => saveEdit(u.user_id)}
+                              disabled={saving}
+                              className="font-sans text-xs text-gold-600 dark:text-gold-400 hover:text-gold-500 dark:hover:text-gold-300 disabled:opacity-40 transition-colors font-medium"
+                            >
                               {saving ? '...' : 'Save'}
                             </button>
-                            <button onClick={cancelEdit} className="text-xs text-gray-500 hover:text-gray-300 transition-colors">
+                            <button
+                              onClick={cancelEdit}
+                              className="font-sans text-xs text-paper-500 dark:text-midnight-400 hover:text-paper-800 dark:hover:text-paper-300 transition-colors"
+                            >
                               Cancel
                             </button>
                           </>
                         ) : (
                           <>
-                            <button onClick={() => startEdit(u)} className="text-xs text-gray-400 hover:text-white transition-colors">
+                            <button
+                              onClick={() => startEdit(u)}
+                              className="font-sans text-xs text-paper-500 dark:text-midnight-400 hover:text-paper-950 dark:hover:text-paper-100 transition-colors"
+                            >
                               Edit
                             </button>
-                            <button onClick={() => { setResetUserId(u.user_id); setResetError(''); setResetPassword('') }}
-                              className="text-xs text-gray-400 hover:text-yellow-400 transition-colors">
+                            <button
+                              onClick={() => { setResetUserId(u.user_id); setResetError(''); setResetPassword('') }}
+                              className="font-sans text-xs text-paper-500 dark:text-midnight-400 hover:text-gold-600 dark:hover:text-gold-400 transition-colors"
+                            >
                               Reset pw
                             </button>
                           </>
@@ -218,32 +279,58 @@ export default function UsersPanel({ currentUserId }: Props) {
 
       {/* Password reset modal */}
       {resetUserId !== null && (
-        <div className="fixed inset-0 bg-black/60 flex items-center justify-center z-50 px-4">
-          <div className="bg-gray-900 border border-gray-800 rounded-xl w-full max-w-sm">
-            <div className="flex items-center justify-between px-6 py-4 border-b border-gray-800">
-              <h2 className="text-white font-medium">Reset Password</h2>
-              <button onClick={() => setResetUserId(null)} className="text-gray-400 hover:text-white text-xl leading-none">&times;</button>
+        <div className="fixed inset-0 bg-midnight-950/70 dark:bg-midnight-950/80 backdrop-blur-sm flex items-center justify-center z-50 px-4">
+          <div className="bg-paper-50 dark:bg-midnight-800 border border-paper-200 dark:border-midnight-600 rounded-2xl w-full max-w-sm shadow-2xl shadow-midnight-950/50">
+            <div className="flex items-center justify-between px-6 py-4 border-b border-paper-200 dark:border-midnight-600">
+              <h2 className="font-display text-base font-semibold text-paper-950 dark:text-paper-100">
+                Reset Password
+              </h2>
+              <button
+                onClick={() => setResetUserId(null)}
+                className="text-paper-400 dark:text-midnight-400 hover:text-paper-800 dark:hover:text-paper-100 text-xl leading-none w-8 h-8 flex items-center justify-center rounded-lg hover:bg-paper-200 dark:hover:bg-midnight-700 transition-all"
+              >
+                &times;
+              </button>
             </div>
-            <form onSubmit={handleReset} className="p-6 flex flex-col gap-4">
-              <p className="text-sm text-gray-400">
-                Resetting password for: <span className="text-white">{users.find(u => u.user_id === resetUserId)?.login_name}</span>
+            <form onSubmit={handleReset} className="p-6 flex flex-col gap-5">
+              <p className="font-sans text-sm text-paper-600 dark:text-midnight-300">
+                Resetting password for:{' '}
+                <span className="font-mono font-medium text-paper-950 dark:text-paper-100">
+                  {users.find(u => u.user_id === resetUserId)?.login_name}
+                </span>
               </p>
-              <div className="flex flex-col gap-1.5">
-                <label className="text-sm text-gray-400">New password <span className="text-gray-600">(min 12 characters)</span></label>
-                <input type="password" value={resetPassword} onChange={e => setResetPassword(e.target.value)}
-                  required minLength={12}
-                  className="bg-gray-800 text-white border border-gray-700 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500" />
+              <div className="flex flex-col gap-2">
+                <label className={labelCls}>
+                  New password{' '}
+                  <span className="normal-case tracking-normal font-normal text-paper-400 dark:text-midnight-400">(min 12 chars)</span>
+                </label>
+                <input
+                  type="password"
+                  value={resetPassword}
+                  onChange={e => setResetPassword(e.target.value)}
+                  required
+                  minLength={12}
+                  className={modalInputCls}
+                />
               </div>
               {resetError && (
-                <p className="text-sm text-red-400 bg-red-950 border border-red-800 rounded-lg px-3 py-2">{resetError}</p>
+                <div className="font-sans text-sm text-rose-600 dark:text-rose-400 bg-rose-950/20 dark:bg-rose-950/40 border border-rose-600/20 dark:border-rose-900/50 rounded-lg px-3.5 py-2.5">
+                  {resetError}
+                </div>
               )}
               <div className="flex gap-3">
-                <button type="button" onClick={() => setResetUserId(null)}
-                  className="flex-1 bg-gray-800 hover:bg-gray-700 text-gray-300 rounded-lg px-4 py-2 text-sm transition-colors">
+                <button
+                  type="button"
+                  onClick={() => setResetUserId(null)}
+                  className="font-sans flex-1 bg-paper-200 dark:bg-midnight-700 hover:bg-paper-300 dark:hover:bg-midnight-600 text-paper-800 dark:text-paper-300 rounded-lg px-4 py-2.5 text-sm font-medium transition-colors"
+                >
                   Cancel
                 </button>
-                <button type="submit" disabled={resetLoading}
-                  className="flex-1 bg-yellow-600 hover:bg-yellow-500 disabled:opacity-50 text-white rounded-lg px-4 py-2 text-sm font-medium transition-colors">
+                <button
+                  type="submit"
+                  disabled={resetLoading}
+                  className="font-sans flex-1 bg-gold-500 hover:bg-gold-400 active:bg-gold-600 disabled:opacity-50 text-midnight-900 rounded-lg px-4 py-2.5 text-sm font-semibold transition-colors"
+                >
                   {resetLoading ? 'Resetting...' : 'Reset'}
                 </button>
               </div>

@@ -1,3 +1,6 @@
+<<<<<<< feature/phase3-redesign-and-editing
+/* Unused — all styles live in index.css and Tailwind utilities */
+=======
 .counter {
   font-size: 16px;
   padding: 5px 10px;
@@ -182,3 +185,4 @@
     border-right-color: var(--border);
   }
 }
+>>>>>>> main

@@ -1,11 +1,84 @@
 @import "tailwindcss";
 
+<<<<<<< feature/phase3-redesign-and-editing
+/* Class-based dark mode */
+@custom-variant dark (&:where(.dark, .dark *));
+
+@theme {
+  /* Midnight navy — dark mode surfaces */
+  --color-midnight-950: #05070f;
+  --color-midnight-900: #080c1a;
+  --color-midnight-800: #0d1428;
+  --color-midnight-750: #101a33;
+  --color-midnight-700: #131e38;
+  --color-midnight-600: #192840;
+  --color-midnight-500: #203250;
+  --color-midnight-400: #4a6090;
+  --color-midnight-300: #6b7fa8;
+  --color-midnight-200: #9aaec8;
+
+  /* Warm paper — light mode surfaces */
+  --color-paper-950: #1a1510;
+  --color-paper-800: #3a3020;
+  --color-paper-600: #6b5e4a;
+  --color-paper-400: #a09080;
+  --color-paper-300: #c8bfb0;
+  --color-paper-200: #e2d9c8;
+  --color-paper-150: #ede6d8;
+  --color-paper-100: #f4ede0;
+  --color-paper-50:  #fdf9f3;
+
+  /* Gold / amber — primary accent */
+  --color-gold-300: #f5d070;
+  --color-gold-400: #e8bc3e;
+  --color-gold-500: #d0a020;
+  --color-gold-600: #a87c10;
+  --color-gold-700: #7a5a0a;
+  --color-gold-800: #4e3a06;
+  --color-gold-900: #2e2004;
+  --color-gold-950: #1a1202;
+
+  /* Teal — active / success */
+  --color-teal-200: #99f6e4;
+  --color-teal-400: #2dd4bf;
+  --color-teal-600: #0d9488;
+  --color-teal-900: #042f2e;
+
+  /* Rose — error / danger */
+  --color-rose-200: #fecdd3;
+  --color-rose-400: #fb7185;
+  --color-rose-600: #e11d48;
+  --color-rose-900: #4c0519;
+  --color-rose-950: #27020e;
+
+  /* Typography */
+  --font-display: 'Playfair Display', Georgia, 'Times New Roman', serif;
+  --font-sans:    'DM Sans', 'Segoe UI', system-ui, sans-serif;
+  --font-mono:    'JetBrains Mono', 'Consolas', monospace;
+=======
 :root {
   color-scheme: light dark;
+>>>>>>> main
 }
 
 body {
   margin: 0;
+<<<<<<< feature/phase3-redesign-and-editing
+  font-family: var(--font-family-sans, 'DM Sans', system-ui, sans-serif);
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  background-color: #fdf9f3;
+}
+
+.dark body {
+  background-color: #080c1a;
+}
+
+:root {
+  scrollbar-width: thin;
+  scrollbar-color: #192840 #080c1a;
+=======
   font-family: system-ui, 'Segoe UI', Roboto, sans-serif;
   -webkit-font-smoothing: antialiased;
+>>>>>>> main
 }

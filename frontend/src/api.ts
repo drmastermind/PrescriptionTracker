@@ -1,16 +1,32 @@
 const BASE = '/api/v1'
 
 let accessToken: string | null = null
+let refreshToken: string | null = null
+let onAuthExpired: (() => void) | null = null
 
-export function setAccessToken(token: string | null) {
-  accessToken = token
+export function setAccessToken(token: string | null) { accessToken = token }
+export function setRefreshToken(token: string | null) { refreshToken = token }
+export function setOnAuthExpired(cb: () => void) { onAuthExpired = cb }
+export function getAccessToken() { return accessToken }
+
+async function doRefresh(): Promise<boolean> {
+  if (!refreshToken) return false
+  const res = await fetch(`${BASE}/auth/refresh`, {
+    method: 'POST',
+    headers: { 'X-Refresh-Token': refreshToken },
+  })
+  if (!res.ok) {
+    accessToken = null
+    refreshToken = null
+    return false
+  }
+  const data = await res.json()
+  accessToken = data.access_token
+  refreshToken = data.refresh_token
+  return true
 }
 
-export function getAccessToken() {
-  return accessToken
-}
-
-async function request<T>(path: string, options: RequestInit = {}): Promise<T> {
+async function request<T>(path: string, options: RequestInit = {}, _retry = true): Promise<T> {
   const headers: Record<string, string> = {
     'Content-Type': 'application/json',
     ...(options.headers as Record<string, string>),
@@ -21,10 +37,16 @@ async function request<T>(path: string, options: RequestInit = {}): Promise<T> {
 
   const res = await fetch(`${BASE}${path}`, { ...options, headers })
 
+  if (res.status === 401 && _retry && !path.startsWith('/auth/login') && !path.startsWith('/auth/refresh')) {
+    const refreshed = await doRefresh()
+    if (refreshed) return request(path, options, false)
+    if (onAuthExpired) onAuthExpired()
+    throw new ApiError(401, 'AUTH_EXPIRED', 'Session expired')
+  }
+
   if (!res.ok) {
     const body = await res.json().catch(() => ({}))
     const err = body?.error ?? {}
-    // If there are field-level details, surface the first one as the message
     const detail = err.details?.[0]
     const msg = detail
       ? `${detail.field ? detail.field + ': ' : ''}${detail.issue}`
@@ -49,6 +71,7 @@ export class ApiError extends Error {
 // Auth
 export interface TokenResponse {
   access_token: string
+  refresh_token: string
   token_type: string
   expires_in: number
 }
@@ -67,8 +90,32 @@ export async function login(login_name: string, password: string): Promise<Token
 }
 
 export async function logout(): Promise<void> {
-  await request('/auth/logout', { method: 'POST' }).catch(() => {})
+  const headers: Record<string, string> = {}
+  if (refreshToken) headers['X-Refresh-Token'] = refreshToken
+  await request('/auth/logout', { method: 'POST', headers }).catch(() => {})
   setAccessToken(null)
+  setRefreshToken(null)
+}
+
+export interface RegisterData {
+  login_name: string
+  user_name: string
+  email: string
+  password: string
+}
+
+export async function register(data: RegisterData): Promise<CurrentUser> {
+  const res = await fetch(`${BASE}/auth/register`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(data),
+  })
+  if (!res.ok) {
+    const body = await res.json().catch(() => ({}))
+    const err = body?.error ?? body ?? {}
+    throw new ApiError(res.status, err.code ?? 'ERROR', err.message ?? err.detail ?? `HTTP ${res.status}`)
+  }
+  return res.json()
 }
 
 export interface CurrentUser {
@@ -212,7 +259,6 @@ export async function createPrescription(userId: number, data: PrescriptionCreat
   })
 }
 
-<<<<<<< feature/phase3-redesign-and-editing
 export async function updatePrescription(
   prescriptionId: number,
   data: Partial<{ medication_id: number; dosage: string; frequency: string; doctor: string; is_active: boolean }>,
@@ -223,8 +269,6 @@ export async function updatePrescription(
   })
 }
 
-=======
->>>>>>> main
 export async function deletePrescription(prescriptionId: number): Promise<void> {
   return request(`/prescriptions/${prescriptionId}`, { method: 'DELETE' })
 }

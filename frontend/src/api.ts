@@ -176,6 +176,10 @@ export async function updateUser(userId: number, data: Partial<{ user_name: stri
   })
 }
 
+export async function deleteUser(userId: number): Promise<void> {
+  return request(`/users/${userId}`, { method: 'DELETE' })
+}
+
 // Lookups
 export interface UserLookup {
   user_id: number
@@ -208,7 +212,7 @@ export interface Prescription {
   prescription_id: number
   user_id: number
   medication_id: number
-  medication: { medication_id: number; medication_name: string }
+  medication: { medication_id: number; medication_name: string; generic_name?: string }
   dosage?: string
   frequency?: string
   doctor?: string
@@ -259,7 +263,6 @@ export async function createPrescription(userId: number, data: PrescriptionCreat
   })
 }
 
-<<<<<<< feature/phase3-redesign-and-editing
 export async function updatePrescription(
   prescriptionId: number,
   data: Partial<{ medication_id: number; dosage: string; frequency: string; doctor: string; is_active: boolean }>,
@@ -270,8 +273,6 @@ export async function updatePrescription(
   })
 }
 
-=======
->>>>>>> main
 export async function deletePrescription(prescriptionId: number): Promise<void> {
   return request(`/prescriptions/${prescriptionId}`, { method: 'DELETE' })
 }

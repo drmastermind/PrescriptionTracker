@@ -8,12 +8,9 @@ interface Props {
   onClose: () => void
 }
 
-<<<<<<< feature/phase3-redesign-and-editing
 const inputCls = 'font-sans bg-paper-100 dark:bg-midnight-700 text-paper-950 dark:text-paper-100 border border-paper-300 dark:border-midnight-500 rounded-lg px-3.5 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-gold-500/30 focus:border-gold-500/60 transition-all w-full'
 const labelCls = 'font-sans text-[0.68rem] font-semibold uppercase tracking-widest text-paper-600 dark:text-midnight-300'
 
-=======
->>>>>>> main
 export default function AddPrescriptionModal({ userId, medications: initialMeds, onCreated, onClose }: Props) {
   const [meds, setMeds] = useState<MedicationLookup[]>(initialMeds)
   const [medicationId, setMedicationId] = useState('')
@@ -23,10 +20,6 @@ export default function AddPrescriptionModal({ userId, medications: initialMeds,
   const [error, setError] = useState('')
   const [loading, setLoading] = useState(false)
 
-<<<<<<< feature/phase3-redesign-and-editing
-=======
-  // Inline "add medication" state
->>>>>>> main
   const [showAddMed, setShowAddMed] = useState(false)
   const [newMedName, setNewMedName] = useState('')
   const [newMedStrength, setNewMedStrength] = useState('')
@@ -84,7 +77,6 @@ export default function AddPrescriptionModal({ userId, medications: initialMeds,
   }
 
   return (
-<<<<<<< feature/phase3-redesign-and-editing
     <div className="fixed inset-0 bg-midnight-950/70 dark:bg-midnight-950/80 backdrop-blur-sm flex items-center justify-center z-50 px-4">
       <div className="bg-paper-50 dark:bg-midnight-800 border border-paper-200 dark:border-midnight-600 rounded-2xl w-full max-w-md max-h-[90vh] overflow-y-auto shadow-2xl shadow-midnight-950/50">
 
@@ -116,34 +108,13 @@ export default function AddPrescriptionModal({ userId, medications: initialMeds,
                 className="font-sans text-xs text-gold-600 dark:text-gold-400 hover:text-gold-500 dark:hover:text-gold-300 transition-colors"
               >
                 {showAddMed ? 'Cancel' : '+ New medication'}
-=======
-    <div className="fixed inset-0 bg-black/60 flex items-center justify-center z-50 px-4">
-      <div className="bg-gray-900 border border-gray-800 rounded-xl w-full max-w-md max-h-[90vh] overflow-y-auto">
-        <div className="flex items-center justify-between px-6 py-4 border-b border-gray-800">
-          <h2 className="text-white font-medium">Add Prescription</h2>
-          <button onClick={onClose} className="text-gray-400 hover:text-white text-xl leading-none">&times;</button>
-        </div>
-
-        <form onSubmit={handleSubmit} className="p-6 flex flex-col gap-4">
-          {/* Medication selector */}
-          <div className="flex flex-col gap-1.5">
-            <div className="flex items-center justify-between">
-              <label className="text-sm text-gray-400">Medication <span className="text-red-400">*</span></label>
-              <button type="button" onClick={() => { setShowAddMed(v => !v); setAddMedError('') }}
-                className="text-xs text-indigo-400 hover:text-indigo-300 transition-colors">
-                {showAddMed ? 'Cancel new' : '+ New medication'}
->>>>>>> main
               </button>
             </div>
             <select
               value={medicationId}
               onChange={e => setMedicationId(e.target.value)}
               required={!showAddMed}
-<<<<<<< feature/phase3-redesign-and-editing
               className={inputCls}
-=======
-              className="bg-gray-800 text-white border border-gray-700 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500"
->>>>>>> main
             >
               <option value="">Select medication...</option>
               {meds.map(m => (
@@ -154,7 +125,6 @@ export default function AddPrescriptionModal({ userId, medications: initialMeds,
             </select>
           </div>
 
-<<<<<<< feature/phase3-redesign-and-editing
           {/* Inline new medication form */}
           {showAddMed && (
             <div className="bg-paper-100 dark:bg-midnight-700/60 border border-gold-500/20 dark:border-gold-700/30 rounded-xl p-4 flex flex-col gap-3">
@@ -215,50 +185,12 @@ export default function AddPrescriptionModal({ userId, medications: initialMeds,
                 disabled={addMedLoading || !newMedName.trim()}
                 className="font-sans bg-gold-500 hover:bg-gold-400 disabled:opacity-50 text-midnight-900 rounded-lg px-3 py-2 text-sm font-semibold transition-colors"
               >
-=======
-          {/* Inline add medication */}
-          {showAddMed && (
-            <div className="border border-indigo-800 bg-indigo-950/30 rounded-lg p-4 flex flex-col gap-3">
-              <p className="text-xs text-indigo-300 font-medium">New medication</p>
-              <div className="flex flex-col gap-1.5">
-                <label className="text-xs text-gray-400">Name <span className="text-red-400">*</span></label>
-                <input type="text" value={newMedName} onChange={e => setNewMedName(e.target.value)} required
-                  placeholder="e.g. Metformin"
-                  className="bg-gray-800 text-white border border-gray-700 rounded px-3 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500" />
-              </div>
-              <div className="grid grid-cols-2 gap-3">
-                <div className="flex flex-col gap-1.5">
-                  <label className="text-xs text-gray-400">Strength</label>
-                  <input type="text" value={newMedStrength} onChange={e => setNewMedStrength(e.target.value)}
-                    placeholder="e.g. 500 mg"
-                    className="bg-gray-800 text-white border border-gray-700 rounded px-3 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500" />
-                </div>
-                <div className="flex flex-col gap-1.5">
-                  <label className="text-xs text-gray-400">Form</label>
-                  <input type="text" value={newMedForm} onChange={e => setNewMedForm(e.target.value)}
-                    placeholder="e.g. tablet"
-                    className="bg-gray-800 text-white border border-gray-700 rounded px-3 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500" />
-                </div>
-              </div>
-              <div className="flex flex-col gap-1.5">
-                <label className="text-xs text-gray-400">Generic name</label>
-                <input type="text" value={newMedGeneric} onChange={e => setNewMedGeneric(e.target.value)}
-                  placeholder="e.g. metformin hydrochloride"
-                  className="bg-gray-800 text-white border border-gray-700 rounded px-3 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500" />
-              </div>
-              {addMedError && (
-                <p className="text-xs text-red-400 bg-red-950 border border-red-800 rounded px-3 py-2">{addMedError}</p>
-              )}
-              <button type="button" onClick={handleAddMedication} disabled={addMedLoading || !newMedName.trim()}
-                className="bg-indigo-700 hover:bg-indigo-600 disabled:opacity-50 text-white rounded px-3 py-1.5 text-sm font-medium transition-colors">
->>>>>>> main
                 {addMedLoading ? 'Adding...' : 'Add and select'}
               </button>
             </div>
           )}
 
           {/* Prescription fields */}
-<<<<<<< feature/phase3-redesign-and-editing
           <div className="flex flex-col gap-2">
             <label className={labelCls}>Dosage</label>
             <input
@@ -309,37 +241,6 @@ export default function AddPrescriptionModal({ userId, medications: initialMeds,
               disabled={loading || !medicationId}
               className="font-sans flex-1 bg-gold-500 hover:bg-gold-400 active:bg-gold-600 disabled:opacity-50 text-midnight-900 rounded-lg px-4 py-2.5 text-sm font-semibold transition-colors"
             >
-=======
-          <div className="flex flex-col gap-1.5">
-            <label className="text-sm text-gray-400">Dosage</label>
-            <input type="text" value={dosage} onChange={e => setDosage(e.target.value)}
-              placeholder="e.g. 500 mg"
-              className="bg-gray-800 text-white border border-gray-700 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500" />
-          </div>
-          <div className="flex flex-col gap-1.5">
-            <label className="text-sm text-gray-400">Frequency</label>
-            <input type="text" value={frequency} onChange={e => setFrequency(e.target.value)}
-              placeholder="e.g. twice daily"
-              className="bg-gray-800 text-white border border-gray-700 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500" />
-          </div>
-          <div className="flex flex-col gap-1.5">
-            <label className="text-sm text-gray-400">Doctor</label>
-            <input type="text" value={doctor} onChange={e => setDoctor(e.target.value)}
-              placeholder="e.g. Dr. Smith"
-              className="bg-gray-800 text-white border border-gray-700 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500" />
-          </div>
-
-          {error && (
-            <p className="text-sm text-red-400 bg-red-950 border border-red-800 rounded-lg px-3 py-2">{error}</p>
-          )}
-          <div className="flex gap-3 pt-1">
-            <button type="button" onClick={onClose}
-              className="flex-1 bg-gray-800 hover:bg-gray-700 text-gray-300 rounded-lg px-4 py-2 text-sm transition-colors">
-              Cancel
-            </button>
-            <button type="submit" disabled={loading || !medicationId}
-              className="flex-1 bg-indigo-600 hover:bg-indigo-500 disabled:opacity-50 text-white rounded-lg px-4 py-2 text-sm font-medium transition-colors">
->>>>>>> main
               {loading ? 'Adding...' : 'Add prescription'}
             </button>
           </div>

@@ -124,6 +124,7 @@ export interface CurrentUser {
   user_name: string
   email: string
   role: string
+  api_key_prefix?: string | null
 }
 
 export async function getMe(): Promise<CurrentUser> {
@@ -153,6 +154,7 @@ export interface User {
   email_verified: boolean
   role: string
   is_active: boolean
+  api_key_prefix: string | null
   created_at: string
   updated_at: string
 }
@@ -275,4 +277,18 @@ export async function updatePrescription(
 
 export async function deletePrescription(prescriptionId: number): Promise<void> {
   return request(`/prescriptions/${prescriptionId}`, { method: 'DELETE' })
+}
+
+// API keys
+export interface ApiKeyResponse {
+  api_key: string
+  prefix: string
+}
+
+export async function generateApiKey(userId: number): Promise<ApiKeyResponse> {
+  return request(`/users/${userId}/api-key`, { method: 'POST' })
+}
+
+export async function revokeApiKey(userId: number): Promise<void> {
+  return request(`/users/${userId}/api-key`, { method: 'DELETE' })
 }

@@ -1,5 +1,6 @@
 import { useState, useEffect, type FormEvent } from 'react'
-import { listUsers, updateUser, deleteUser, adminResetPassword, type User, ApiError } from './api'
+import { listUsers, updateUser, deleteUser, adminResetPassword, generateApiKey, revokeApiKey, type User, ApiError } from './api'
+import ApiKeyModal from './ApiKeyModal'
 
 interface Props {
   currentUserId: number
@@ -33,6 +34,8 @@ export default function UsersPanel({ currentUserId }: Props) {
   const [resetLoading, setResetLoading] = useState(false)
   const [resetError, setResetError] = useState('')
   const [deletingId, setDeletingId] = useState<number | null>(null)
+  const [apiKeyUserId, setApiKeyUserId] = useState<number | null>(null)
+  const [newApiKey, setNewApiKey] = useState<string | null>(null)
   const [toast, setToast] = useState('')
 
   useEffect(() => { load() }, [])
@@ -108,6 +111,33 @@ export default function UsersPanel({ currentUserId }: Props) {
     }
   }
 
+  async function handleGenerateApiKey(userId: number) {
+    setApiKeyUserId(userId)
+    try {
+      const res = await generateApiKey(userId)
+      setNewApiKey(res.api_key)
+      await load()
+    } catch (err) {
+      alert(err instanceof ApiError ? err.message : 'Failed to generate API key')
+    } finally {
+      setApiKeyUserId(null)
+    }
+  }
+
+  async function handleRevokeApiKey(userId: number, loginName: string) {
+    if (!confirm(`Revoke API key for "${loginName}"?`)) return
+    setApiKeyUserId(userId)
+    try {
+      await revokeApiKey(userId)
+      await load()
+      showToast('API key revoked.')
+    } catch (err) {
+      alert(err instanceof ApiError ? err.message : 'Failed to revoke API key')
+    } finally {
+      setApiKeyUserId(null)
+    }
+  }
+
   function showToast(msg: string) {
     setToast(msg)
     setTimeout(() => setToast(''), 3000)
@@ -160,6 +190,9 @@ export default function UsersPanel({ currentUserId }: Props) {
                 </th>
                 <th className="px-5 py-3 text-left font-mono text-[0.6rem] uppercase tracking-widest text-paper-500 dark:text-midnight-400 font-medium hidden lg:table-cell">
                   Updated
+                </th>
+                <th className="px-5 py-3 text-left font-mono text-[0.6rem] uppercase tracking-widest text-paper-500 dark:text-midnight-400 font-medium hidden xl:table-cell">
+                  API Key
                 </th>
                 <th className="px-5 py-3 w-36" />
               </tr>
@@ -248,6 +281,15 @@ export default function UsersPanel({ currentUserId }: Props) {
                         {fmtDate(u.updated_at)}
                       </span>
                     </td>
+                    <td className="px-5 py-3 hidden xl:table-cell">
+                      {u.api_key_prefix ? (
+                        <span className="font-mono text-[0.62rem] text-paper-500 dark:text-midnight-400 bg-paper-100 dark:bg-midnight-700 border border-paper-200 dark:border-midnight-600 rounded px-2 py-0.5">
+                          {u.api_key_prefix}…
+                        </span>
+                      ) : (
+                        <span className="font-mono text-[0.6rem] text-paper-300 dark:text-midnight-600">none</span>
+                      )}
+                    </td>
                     <td className="px-5 py-3">
                       <div className="flex gap-3 items-center">
                         {isEditing ? (
@@ -280,6 +322,23 @@ export default function UsersPanel({ currentUserId }: Props) {
                             >
                               Reset pw
                             </button>
+                            <button
+                              onClick={() => handleGenerateApiKey(u.user_id)}
+                              disabled={apiKeyUserId === u.user_id}
+                              className="font-sans text-xs text-paper-500 dark:text-midnight-400 hover:text-teal-600 dark:hover:text-teal-400 disabled:opacity-40 transition-colors"
+                              title={u.api_key_prefix ? 'Regenerate API key' : 'Generate API key'}
+                            >
+                              {apiKeyUserId === u.user_id ? '...' : u.api_key_prefix ? 'Regen key' : 'Gen key'}
+                            </button>
+                            {u.api_key_prefix && (
+                              <button
+                                onClick={() => handleRevokeApiKey(u.user_id, u.login_name)}
+                                disabled={apiKeyUserId === u.user_id}
+                                className="font-sans text-xs text-paper-400 dark:text-midnight-500 hover:text-rose-600 dark:hover:text-rose-400 disabled:opacity-40 transition-colors"
+                              >
+                                Revoke
+                              </button>
+                            )}
                             {!isSelf && (
                               <button
                                 onClick={() => handleDelete(u.user_id, u.login_name)}
@@ -300,6 +359,11 @@ export default function UsersPanel({ currentUserId }: Props) {
           </table>
         </div>
       </div>
+
+      {/* API key modal — shown once after generation */}
+      {newApiKey && (
+        <ApiKeyModal apiKey={newApiKey} onClose={() => setNewApiKey(null)} />
+      )}
 
       {/* Password reset modal */}
       {resetUserId !== null && (

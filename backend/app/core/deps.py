@@ -1,4 +1,4 @@
-from fastapi import Depends, HTTPException
+from fastapi import Depends, HTTPException, Request
 from fastapi.security import OAuth2PasswordBearer
 from jose import JWTError
 from sqlalchemy.orm import Session
@@ -7,10 +7,25 @@ from app.core.security import decode_access_token
 from app.db.session import get_db
 from app.models.user import User
 
-oauth2_scheme = OAuth2PasswordBearer(tokenUrl="/api/v1/auth/login")
+oauth2_scheme = OAuth2PasswordBearer(tokenUrl="/api/v1/auth/login", auto_error=False)
 
 
-def get_current_user(token: str = Depends(oauth2_scheme), db: Session = Depends(get_db)) -> User:
+def get_current_user(
+    request: Request,
+    token: str | None = Depends(oauth2_scheme),
+    db: Session = Depends(get_db),
+) -> User:
+    # API key takes priority when present
+    api_key = request.headers.get("X-API-Key")
+    if api_key:
+        from app.services.api_key_service import verify
+        user = verify(db, api_key)
+        if not user:
+            raise HTTPException(status_code=401, detail="Invalid API key.")
+        return user
+
+    if not token:
+        raise HTTPException(status_code=401, detail="Not authenticated.")
     try:
         payload = decode_access_token(token)
         user_id = int(payload["sub"])

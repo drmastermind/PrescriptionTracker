@@ -9,10 +9,13 @@ import {
   getUserPrescriptions,
   updatePrescription,
   deletePrescription,
+  generateApiKey,
+  revokeApiKey,
   logout,
   ApiError,
 } from './api'
 import AddPrescriptionModal from './AddPrescriptionModal'
+import ApiKeyModal from './ApiKeyModal'
 import UsersPanel from './UsersPanel'
 import ChangePasswordModal from './ChangePasswordModal'
 
@@ -40,6 +43,9 @@ export default function Dashboard({ currentUser, onLogout, darkMode, onToggleDar
   const [editState, setEditState] = useState<{ medication_id: number; dosage: string; frequency: string; doctor: string; is_active: boolean } | null>(null)
   const [saving, setSaving] = useState(false)
   const [showChangePassword, setShowChangePassword] = useState(false)
+  const [apiKeyPrefix, setApiKeyPrefix] = useState<string | null>(currentUser.api_key_prefix ?? null)
+  const [apiKeyLoading, setApiKeyLoading] = useState(false)
+  const [newApiKey, setNewApiKey] = useState<string | null>(null)
 
   const isAdmin = currentUser.role === 'admin'
 
@@ -128,6 +134,32 @@ export default function Dashboard({ currentUser, onLogout, darkMode, onToggleDar
   async function handleLogout() {
     await logout()
     onLogout()
+  }
+
+  async function handleGenerateMyApiKey() {
+    setApiKeyLoading(true)
+    try {
+      const res = await generateApiKey(currentUser.user_id)
+      setApiKeyPrefix(res.prefix)
+      setNewApiKey(res.api_key)
+    } catch (err) {
+      alert(err instanceof ApiError ? err.message : 'Failed to generate API key')
+    } finally {
+      setApiKeyLoading(false)
+    }
+  }
+
+  async function handleRevokeMyApiKey() {
+    if (!confirm('Revoke your API key?')) return
+    setApiKeyLoading(true)
+    try {
+      await revokeApiKey(currentUser.user_id)
+      setApiKeyPrefix(null)
+    } catch (err) {
+      alert(err instanceof ApiError ? err.message : 'Failed to revoke API key')
+    } finally {
+      setApiKeyLoading(false)
+    }
   }
 
   const selectedUserName = users.find(u => u.user_id === selectedUserId)?.user_name
@@ -408,9 +440,51 @@ export default function Dashboard({ currentUser, onLogout, darkMode, onToggleDar
                 </table>
               )}
             </div>
+            {/* My API Key card */}
+            <div className="bg-paper-50 dark:bg-midnight-800 border border-paper-200 dark:border-midnight-600 rounded-xl shadow-sm">
+              <div className="px-5 py-3.5 border-b border-paper-200 dark:border-midnight-600">
+                <h2 className="font-sans text-sm font-semibold text-paper-950 dark:text-paper-100">My API Key</h2>
+              </div>
+              <div className="px-5 py-4 flex flex-wrap items-center gap-4">
+                <div className="flex-1 min-w-0">
+                  {apiKeyPrefix ? (
+                    <div className="flex items-center gap-2">
+                      <span className="font-mono text-xs text-paper-500 dark:text-midnight-400">Active key:</span>
+                      <code className="font-mono text-xs bg-paper-100 dark:bg-midnight-700 border border-paper-200 dark:border-midnight-600 rounded px-2 py-0.5 text-paper-800 dark:text-paper-200">
+                        {apiKeyPrefix}…
+                      </code>
+                    </div>
+                  ) : (
+                    <span className="font-sans text-xs text-paper-400 dark:text-midnight-500">No API key. Generate one to access the API programmatically.</span>
+                  )}
+                </div>
+                <div className="flex items-center gap-3 shrink-0">
+                  <button
+                    onClick={handleGenerateMyApiKey}
+                    disabled={apiKeyLoading}
+                    className="font-sans text-xs font-medium text-teal-600 dark:text-teal-400 hover:text-teal-500 dark:hover:text-teal-300 disabled:opacity-40 transition-colors"
+                  >
+                    {apiKeyLoading ? '...' : apiKeyPrefix ? 'Regenerate' : 'Generate'}
+                  </button>
+                  {apiKeyPrefix && (
+                    <button
+                      onClick={handleRevokeMyApiKey}
+                      disabled={apiKeyLoading}
+                      className="font-sans text-xs text-paper-400 dark:text-midnight-500 hover:text-rose-600 dark:hover:text-rose-400 disabled:opacity-40 transition-colors"
+                    >
+                      Revoke
+                    </button>
+                  )}
+                </div>
+              </div>
+            </div>
           </div>
         )}
       </main>
+
+      {newApiKey && (
+        <ApiKeyModal apiKey={newApiKey} onClose={() => setNewApiKey(null)} />
+      )}
 
       {showAdd && selectedUserId !== null && (
         <AddPrescriptionModal

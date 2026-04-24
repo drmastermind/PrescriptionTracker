@@ -57,6 +57,7 @@ class UserRead(BaseModel):
     email_verified: bool
     role: str
     is_active: bool
+    api_key_prefix: str | None = None
     created_at: datetime
     updated_at: datetime
 

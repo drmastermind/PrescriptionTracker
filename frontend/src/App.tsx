@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react'
 import LoginPage from './LoginPage'
 import Dashboard from './Dashboard'
-import { getMe, type CurrentUser, setAccessToken } from './api'
+import { getMe, type CurrentUser, setAccessToken, setRefreshToken, setOnAuthExpired } from './api'
 
 type AppState = 'login' | 'loading' | 'dashboard'
 
@@ -13,6 +13,10 @@ export default function App() {
   useEffect(() => {
     document.documentElement.classList.toggle('dark', darkMode)
   }, [darkMode])
+
+  useEffect(() => {
+    setOnAuthExpired(() => handleLogout)
+  }, [])
 
   async function handleLogin() {
     setState('loading')
@@ -28,6 +32,7 @@ export default function App() {
   function handleLogout() {
     setCurrentUser(null)
     setAccessToken(null)
+    setRefreshToken(null)
     setState('login')
   }
 

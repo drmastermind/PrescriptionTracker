@@ -10,8 +10,8 @@ A personal/family prescription management system built with FastAPI, SQLAlchemy,
 |-------|--------|-------------|
 | Phase 1 — Backend API | **Complete** | FastAPI backend with full CRUD, auth, and tests |
 | Phase 2 — React Frontend | **Complete** | Browser UI with prescription and user management |
-| Phase 3 — Login & Registration UI | Pending | Full login form, user self-registration flow |
-| Phase 4 — API Keys | Pending | Integration credentials for programmatic access |
+| Phase 3 — Login & Registration UI | **Complete** | Login form, user self-registration, refresh token rotation |
+| Phase 4 — API Keys | **Complete** | Per-user API keys for programmatic access |
 | Phase 5 — Android App | Pending | Mobile client calling the remote API |
 
 ---
@@ -45,6 +45,7 @@ Full Python/FastAPI backend with MariaDB.
 - Full CRUD for `/users`, `/medications`, `/prescriptions`
 - `GET /users/{id}/prescriptions` — prescriptions for a specific user
 - `GET /lookups/users`, `GET /lookups/medications` — lightweight dropdown lists
+- `POST /users/{id}/api-key`, `DELETE /users/{id}/api-key` — API key generate/revoke
 - `GET /healthz`, `GET /readyz`, `GET /api/v1/version`
 
 **Other**
@@ -62,26 +63,52 @@ Single-page React app (TypeScript + Tailwind CSS) calling the Phase 1 API.
 
 **Prescriptions**
 - User selector dropdown (admin sees all users; normal users see only themselves)
-- Prescription list sorted alphabetically by medication name
+- Prescription list sorted alphabetically by medication name; shows brand and generic name
 - Filter by active / inactive / all
 - Add Prescription modal with inline medication creation — add a new medication to the catalog without leaving the form
+- Inline row editing (medication, dosage, frequency, doctor, status) with Save/Cancel
 - Soft-delete via Remove button
 
 **User Management (admin only)**
 - Users tab with an editable table: display name, login name, email, role, active status
 - Inline row editing with Save/Cancel
 - Per-user password reset modal
-- Table reloads from server after every change; Updated timestamp column confirms saves
+- Delete user (blocked if prescriptions exist)
+- API key column showing active key prefix; generate/regenerate/revoke per row
 
 **Account**
-- Login page (JWT auth; access token held in memory)
+- Login page (JWT auth; access token held in memory, refresh token rotated on every use)
+- User self-registration (creates a `normal` account)
 - Change Password modal available to all logged-in users
-- Sign out revokes the refresh token
+- My API Key card — generate, regenerate, or revoke your own API key
+- Sign out revokes the refresh token server-side
 
 **UI**
 - Dark mode default with light/dark toggle
 - Responsive layout (works on mobile browsers)
 - Field-level validation errors surfaced from the API
+
+---
+
+## Phase 3 — Login & Registration UI
+
+- Tabbed login/register card on the login page
+- Registration creates a `normal` user then auto-logs in
+- Access token held in memory; refresh token rotated on each `/auth/refresh` call
+- Session expiry automatically triggers logout and redirects to the login page
+
+---
+
+## Phase 4 — API Keys
+
+Per-user API keys for programmatic/integration access (not the primary auth method for browsers).
+
+- Keys are `pt_` + 32 random bytes (hex); only the SHA-256 hash is stored — plaintext shown once on generation
+- Key prefix (first 11 chars) stored for display and debugging
+- `X-API-Key` header accepted alongside `Authorization: Bearer` on all authenticated endpoints
+- Admin can generate, regenerate, and revoke keys for any user from the Users panel
+- Any user can manage their own key from the Dashboard API Key card
+- Endpoints: `POST /api/v1/users/{id}/api-key`, `DELETE /api/v1/users/{id}/api-key`
 
 ---
 
@@ -153,23 +180,24 @@ uv run pytest
 ```
 backend/
   app/
-    api/v1/endpoints/   # Route handlers (auth, users, medications, prescriptions, lookups, ops)
+    api/v1/endpoints/   # Route handlers (auth, users, medications, prescriptions, lookups, ops, api_keys)
     core/               # Config, security, tokens, errors, deps
     models/             # SQLAlchemy ORM models
     schemas/            # Pydantic request/response schemas
-    services/           # Business logic
+    services/           # Business logic (auth, user, medication, prescription, api_key, audit)
     scripts/            # create_admin, seed_dev
     tests/              # pytest test suite
   alembic/              # Migrations
 frontend/
   src/
-    api.ts              # API client
+    api.ts              # API client (auth, users, medications, prescriptions, api keys)
     App.tsx             # Root component / auth state
-    LoginPage.tsx
-    Dashboard.tsx       # Prescriptions view
+    LoginPage.tsx       # Login + self-registration
+    Dashboard.tsx       # Prescriptions view + My API Key card
     AddPrescriptionModal.tsx
-    UsersPanel.tsx      # Admin user management
+    UsersPanel.tsx      # Admin user management + API key management
     ChangePasswordModal.tsx
+    ApiKeyModal.tsx     # One-time key display with copy button
 planning/
   PLAN.md               # Build guide and architecture decisions
 ```

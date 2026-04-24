@@ -298,10 +298,21 @@ export default function Dashboard({ currentUser, onLogout, darkMode, onToggleDar
                                 className="font-sans bg-paper-100 dark:bg-midnight-700 text-paper-950 dark:text-paper-100 border border-paper-300 dark:border-midnight-500 rounded-lg px-2.5 py-1.5 text-xs focus:outline-none focus:ring-2 focus:ring-gold-500/30 focus:border-gold-500/60 transition-all"
                               >
                                 {medications.map(m => (
-                                  <option key={m.medication_id} value={m.medication_id}>{m.medication_name}</option>
+                                  <option key={m.medication_id} value={m.medication_id}>
+                                    {m.medication_name}{m.generic_name ? ` (${m.generic_name})` : ''}
+                                  </option>
                                 ))}
                               </select>
-                            ) : p.medication.medication_name}
+                            ) : (
+                              <>
+                                {p.medication.medication_name}
+                                {p.medication.generic_name && (
+                                  <span className="block font-sans text-xs font-normal text-paper-500 dark:text-midnight-400">
+                                    {p.medication.generic_name}
+                                  </span>
+                                )}
+                              </>
+                            )}
                           </td>
                           <td className="px-5 py-3.5 text-paper-700 dark:text-midnight-200 hidden sm:table-cell">
                             {isEditing && editState ? (

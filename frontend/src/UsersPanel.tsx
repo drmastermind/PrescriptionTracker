@@ -1,5 +1,5 @@
 import { useState, useEffect, type FormEvent } from 'react'
-import { listUsers, updateUser, adminResetPassword, type User, ApiError } from './api'
+import { listUsers, updateUser, deleteUser, adminResetPassword, type User, ApiError } from './api'
 
 interface Props {
   currentUserId: number
@@ -32,6 +32,7 @@ export default function UsersPanel({ currentUserId }: Props) {
   const [resetPassword, setResetPassword] = useState('')
   const [resetLoading, setResetLoading] = useState(false)
   const [resetError, setResetError] = useState('')
+  const [deletingId, setDeletingId] = useState<number | null>(null)
   const [toast, setToast] = useState('')
 
   useEffect(() => { load() }, [])
@@ -90,6 +91,20 @@ export default function UsersPanel({ currentUserId }: Props) {
       setResetError(err instanceof ApiError ? err.message : 'Failed to reset password')
     } finally {
       setResetLoading(false)
+    }
+  }
+
+  async function handleDelete(userId: number, loginName: string) {
+    if (!confirm(`Permanently delete user "${loginName}"? This cannot be undone.`)) return
+    setDeletingId(userId)
+    try {
+      await deleteUser(userId)
+      await load()
+      showToast('User deleted.')
+    } catch (err) {
+      alert(err instanceof ApiError ? err.message : 'Failed to delete user')
+    } finally {
+      setDeletingId(null)
     }
   }
 
@@ -265,6 +280,15 @@ export default function UsersPanel({ currentUserId }: Props) {
                             >
                               Reset pw
                             </button>
+                            {!isSelf && (
+                              <button
+                                onClick={() => handleDelete(u.user_id, u.login_name)}
+                                disabled={deletingId === u.user_id}
+                                className="font-sans text-xs text-paper-400 dark:text-midnight-500 hover:text-rose-600 dark:hover:text-rose-400 disabled:opacity-40 transition-colors"
+                              >
+                                {deletingId === u.user_id ? '...' : 'Delete'}
+                              </button>
+                            )}
                           </>
                         )}
                       </div>

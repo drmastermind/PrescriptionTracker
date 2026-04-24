@@ -42,6 +42,7 @@ class MedicationSummary(BaseModel):
     model_config = {"from_attributes": True}
     medication_id: int
     medication_name: str
+    generic_name: str | None = None
 
 
 class PrescriptionRead(BaseModel):

@@ -33,8 +33,13 @@ export default function App() {
 
   if (state === 'loading') {
     return (
+<<<<<<< feature/phase3-redesign-and-editing
       <div className="min-h-screen bg-paper-50 dark:bg-midnight-900 flex items-center justify-center">
         <span className="font-mono text-xs tracking-widest uppercase text-paper-400 dark:text-midnight-400">Loading...</span>
+=======
+      <div className="min-h-screen bg-gray-950 flex items-center justify-center">
+        <span className="text-gray-400 text-sm">Loading...</span>
+>>>>>>> main
       </div>
     )
   }

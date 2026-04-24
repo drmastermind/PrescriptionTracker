@@ -1,0 +1,25 @@
+{
+  "permissions": {
+    "allow": [
+      "PowerShell(\"MYSQL_USER=$env:MYSQL_USER\"; \"MYSQL_PASSWORD_SET=$\\([bool]$env:MYSQL_PASSWORD\\)\"; \"MYSQL_HOST=$env:MYSQL_HOST\"; \"MYSQL_PORT=$env:MYSQL_PORT\"; \"MYSQL_DATABASE=$env:MYSQL_DATABASE\")",
+      "Bash(mysql --version)",
+      "Bash(export MYSQL_PWD='Scott321007!')",
+      "Bash(mysql -h 10.0.0.70 -P 3306 -u claude_rw --protocol=TCP -e \"USE PrescriptionDatabase; SELECT 'Users' tbl, COUNT\\(*\\) n FROM Users UNION ALL SELECT 'Medications', COUNT\\(*\\) FROM Medications UNION ALL SELECT 'Prescriptions', COUNT\\(*\\) FROM Prescriptions; SHOW CREATE TABLE Users\\\\G SHOW CREATE TABLE Medications\\\\G SHOW CREATE TABLE Prescriptions\\\\G\")",
+      "Bash(mysqldump -h 10.0.0.70 -P 3306 -u claude_rw --protocol=TCP --single-transaction PrescriptionDatabase)",
+      "Bash(mysql -h 10.0.0.70 -P 3306 -u claude_rw --protocol=TCP -N -B -e ' *)",
+      "Bash(mysql -h 10.0.0.70 -P 3306 -u claude_rw --protocol=TCP -e ' *)",
+      "Bash(uv add *)",
+      "Bash(mkdir -p app/api/v1/endpoints app/core app/models app/schemas app/services app/scripts app/db app/tests alembic/versions)",
+      "Bash(rm -f hello.py)",
+      "Bash(uv run python -c ' *)",
+      "Bash(uv run *)",
+      "Bash(curl -s http://localhost:8000/healthz)",
+      "Bash(curl -s http://localhost:8000/readyz)",
+      "Bash(curl -s http://localhost:8000/api/v1/version)",
+      "Bash(curl -s -X POST http://localhost:8000/api/v1/auth/login -H \"Content-Type: application/json\" -d '{\"login_name\":\"admin\",\"password\":\"Admin123456!\"}')",
+      "Bash(python -c \"import sys,json; d=json.load\\(sys.stdin\\); print\\('Login OK, token prefix:', d['access_token'][:20]\\)\")",
+      "Bash(uv sync *)",
+      "Bash(git add *)"
+    ]
+  }
+}

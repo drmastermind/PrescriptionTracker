@@ -1,5 +1,6 @@
 @import "tailwindcss";
 
+<<<<<<< feature/phase3-redesign-and-editing
 /* Class-based dark mode */
 @custom-variant dark (&:where(.dark, .dark *));
 
@@ -54,10 +55,15 @@
   --font-display: 'Playfair Display', Georgia, 'Times New Roman', serif;
   --font-sans:    'DM Sans', 'Segoe UI', system-ui, sans-serif;
   --font-mono:    'JetBrains Mono', 'Consolas', monospace;
+=======
+:root {
+  color-scheme: light dark;
+>>>>>>> main
 }
 
 body {
   margin: 0;
+<<<<<<< feature/phase3-redesign-and-editing
   font-family: var(--font-family-sans, 'DM Sans', system-ui, sans-serif);
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
@@ -71,4 +77,8 @@ body {
 :root {
   scrollbar-width: thin;
   scrollbar-color: #192840 #080c1a;
+=======
+  font-family: system-ui, 'Segoe UI', Roboto, sans-serif;
+  -webkit-font-smoothing: antialiased;
+>>>>>>> main
 }

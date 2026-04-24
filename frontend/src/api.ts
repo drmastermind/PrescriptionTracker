@@ -212,6 +212,7 @@ export async function createPrescription(userId: number, data: PrescriptionCreat
   })
 }
 
+<<<<<<< feature/phase3-redesign-and-editing
 export async function updatePrescription(
   prescriptionId: number,
   data: Partial<{ medication_id: number; dosage: string; frequency: string; doctor: string; is_active: boolean }>,
@@ -222,6 +223,8 @@ export async function updatePrescription(
   })
 }
 
+=======
+>>>>>>> main
 export async function deletePrescription(prescriptionId: number): Promise<void> {
   return request(`/prescriptions/${prescriptionId}`, { method: 'DELETE' })
 }

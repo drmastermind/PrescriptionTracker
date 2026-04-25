@@ -155,6 +155,8 @@ export interface User {
   role: string
   is_active: boolean
   api_key_prefix: string | null
+  locked_until: string | null
+  failed_login_count: number
   created_at: string
   updated_at: string
 }
@@ -171,7 +173,7 @@ export async function listUsers(page = 1, size = 50): Promise<PaginatedUsers> {
   return request(`/users?page=${page}&size=${size}`)
 }
 
-export async function updateUser(userId: number, data: Partial<{ user_name: string; email: string; login_name: string; role: string; is_active: boolean }>): Promise<User> {
+export async function updateUser(userId: number, data: Partial<{ user_name: string; email: string; login_name: string; role: string; is_active: boolean; locked_until: string | null; failed_login_count: number }>): Promise<User> {
   return request(`/users/${userId}`, {
     method: 'PATCH',
     body: JSON.stringify(data),
@@ -195,6 +197,7 @@ export interface MedicationLookup {
   generic_name?: string
   strength?: string
   form?: string
+  brand_name?: string
 }
 
 export async function lookupUsers(): Promise<UserLookup[]> {
@@ -267,12 +270,34 @@ export async function createPrescription(userId: number, data: PrescriptionCreat
 
 export async function updatePrescription(
   prescriptionId: number,
-  data: Partial<{ medication_id: number; dosage: string; frequency: string; doctor: string; is_active: boolean }>,
+  data: Partial<{
+    medication_id: number
+    dosage: string
+    frequency: string
+    doctor: string
+    is_active: boolean
+    prescribed_date: string
+    start_date: string
+    end_date: string
+    quantity: number
+    refills_remaining: number
+    route: string
+    reason: string
+    pharmacy: string
+    notes: string
+  }>,
 ): Promise<Prescription> {
   return request(`/prescriptions/${prescriptionId}`, {
     method: 'PATCH',
     body: JSON.stringify(data),
   })
+}
+
+export async function updateMedication(
+  medId: number,
+  data: Partial<{ medication_name: string; generic_name: string; strength: string; form: string; brand_name: string }>,
+): Promise<MedicationLookup> {
+  return request(`/medications/${medId}`, { method: 'PATCH', body: JSON.stringify(data) })
 }
 
 export async function deletePrescription(prescriptionId: number): Promise<void> {

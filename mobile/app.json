@@ -1,0 +1,22 @@
+{
+  "expo": {
+    "name": "Prescription Tracker",
+    "slug": "prescription-tracker",
+    "version": "4.1.0",
+    "orientation": "portrait",
+    "userInterfaceStyle": "automatic",
+    "scheme": "rxtracker",
+    "android": {
+      "package": "us.unix4u.prescriptiontracker"
+    },
+    "plugins": [
+      "expo-router",
+      "expo-secure-store",
+      "expo-asset",
+      "expo-font"
+    ],
+    "experiments": {
+      "typedRoutes": true
+    }
+  }
+}

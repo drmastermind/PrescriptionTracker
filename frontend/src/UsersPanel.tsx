@@ -14,25 +14,239 @@ interface EditState {
   is_active: boolean
 }
 
-function fmtDate(iso: string) {
-  return new Date(iso).toLocaleString(undefined, { dateStyle: 'short', timeStyle: 'short' })
+const inputCls = 'font-sans bg-paper-100 dark:bg-midnight-700 text-paper-950 dark:text-paper-100 border border-paper-300 dark:border-midnight-500 rounded-lg px-3.5 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-gold-500/30 focus:border-gold-500/60 transition-all w-full'
+const labelCls = 'font-sans text-[0.68rem] font-semibold uppercase tracking-widest text-paper-600 dark:text-midnight-300'
+
+function isLocked(user: User): boolean {
+  if (!user.locked_until) return false
+  return new Date(user.locked_until) > new Date()
 }
 
-const editInputCls = 'font-sans bg-paper-100 dark:bg-midnight-700 text-paper-950 dark:text-paper-100 border border-paper-300 dark:border-midnight-500 rounded-lg px-2.5 py-1.5 text-xs focus:outline-none focus:ring-2 focus:ring-gold-500/30 focus:border-gold-500/60 transition-all'
-const modalInputCls = 'font-sans bg-paper-100 dark:bg-midnight-700 text-paper-950 dark:text-paper-100 border border-paper-300 dark:border-midnight-500 rounded-lg px-3.5 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-gold-500/30 focus:border-gold-500/60 transition-all w-full'
-const labelCls = 'font-sans text-[0.68rem] font-semibold uppercase tracking-widest text-paper-600 dark:text-midnight-300'
+function generateStrongPassword(): string {
+  const upper = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ'
+  const lower = 'abcdefghijklmnopqrstuvwxyz'
+  const digits = '0123456789'
+  const symbols = '!@#$%&*'
+  const all = upper + lower + digits + symbols
+  const arr = new Uint8Array(16)
+  crypto.getRandomValues(arr)
+  const chars = Array.from(arr).map(b => all[b % all.length])
+  chars[0] = upper[arr[0] % upper.length]
+  chars[1] = lower[arr[1] % lower.length]
+  chars[2] = digits[arr[2] % digits.length]
+  chars[3] = symbols[arr[3] % symbols.length]
+  return chars.join('')
+}
+
+function EditUserModal({
+  user,
+  isSelf,
+  onSaved,
+  onClose,
+}: {
+  user: User
+  isSelf: boolean
+  onSaved: () => void
+  onClose: () => void
+}) {
+  const [state, setState] = useState<EditState>({
+    user_name: user.user_name,
+    email: user.email,
+    login_name: user.login_name,
+    role: user.role,
+    is_active: user.is_active,
+  })
+  const [error, setError] = useState('')
+  const [loading, setLoading] = useState(false)
+
+  async function handleSubmit(e: FormEvent) {
+    e.preventDefault()
+    setError('')
+    setLoading(true)
+    try {
+      await updateUser(user.user_id, state)
+      onSaved()
+    } catch (err) {
+      setError(err instanceof ApiError ? err.message : 'Failed to save')
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  return (
+    <div className="fixed inset-0 bg-midnight-950/70 dark:bg-midnight-950/80 backdrop-blur-sm flex items-center justify-center z-50 px-4">
+      <div className="bg-paper-50 dark:bg-midnight-800 border border-paper-200 dark:border-midnight-600 rounded-2xl w-full max-w-sm shadow-2xl shadow-midnight-950/50">
+        <div className="flex items-center justify-between px-6 py-4 border-b border-paper-200 dark:border-midnight-600">
+          <h2 className="font-display text-base font-semibold text-paper-950 dark:text-paper-100">Edit User</h2>
+          <button onClick={onClose} className="text-paper-400 dark:text-midnight-400 hover:text-paper-800 dark:hover:text-paper-100 text-xl leading-none w-8 h-8 flex items-center justify-center rounded-lg hover:bg-paper-200 dark:hover:bg-midnight-700 transition-all">
+            &times;
+          </button>
+        </div>
+        <form onSubmit={handleSubmit} className="p-6 flex flex-col gap-4">
+          <div className="flex flex-col gap-2">
+            <label className={labelCls}>Display name</label>
+            <input type="text" value={state.user_name} onChange={e => setState({ ...state, user_name: e.target.value })} required className={inputCls} />
+          </div>
+          <div className="flex flex-col gap-2">
+            <label className={labelCls}>Login name</label>
+            <input type="text" value={state.login_name} onChange={e => setState({ ...state, login_name: e.target.value })} required className={inputCls} />
+          </div>
+          <div className="flex flex-col gap-2">
+            <label className={labelCls}>Email</label>
+            <input type="email" value={state.email} onChange={e => setState({ ...state, email: e.target.value })} required className={inputCls} />
+          </div>
+          <div className="grid grid-cols-2 gap-3">
+            <div className="flex flex-col gap-2">
+              <label className={labelCls}>Role</label>
+              <select
+                value={state.role}
+                onChange={e => setState({ ...state, role: e.target.value })}
+                disabled={isSelf}
+                className={`${inputCls} disabled:opacity-50 disabled:cursor-not-allowed`}
+              >
+                <option value="normal">normal</option>
+                <option value="admin">admin</option>
+              </select>
+              {isSelf && (
+                <span className="font-sans text-[0.65rem] text-paper-400 dark:text-midnight-500">Cannot change your own role</span>
+              )}
+            </div>
+            <div className="flex flex-col gap-2">
+              <label className={labelCls}>Status</label>
+              <select
+                value={String(state.is_active)}
+                onChange={e => setState({ ...state, is_active: e.target.value === 'true' })}
+                disabled={isSelf}
+                className={`${inputCls} disabled:opacity-50 disabled:cursor-not-allowed`}
+              >
+                <option value="true">Active</option>
+                <option value="false">Inactive</option>
+              </select>
+            </div>
+          </div>
+          {error && (
+            <div className="font-sans text-sm text-rose-600 dark:text-rose-400 bg-rose-950/20 dark:bg-rose-950/40 border border-rose-600/20 dark:border-rose-900/50 rounded-lg px-3.5 py-2.5">
+              {error}
+            </div>
+          )}
+          <div className="flex gap-3 pt-1">
+            <button type="button" onClick={onClose} className="font-sans flex-1 bg-paper-200 dark:bg-midnight-700 hover:bg-paper-300 dark:hover:bg-midnight-600 text-paper-800 dark:text-paper-300 rounded-lg px-4 py-2.5 text-sm font-medium transition-colors">
+              Cancel
+            </button>
+            <button type="submit" disabled={loading} className="font-sans flex-1 bg-gold-500 hover:bg-gold-400 active:bg-gold-600 disabled:opacity-50 text-midnight-900 rounded-lg px-4 py-2.5 text-sm font-semibold transition-colors">
+              {loading ? 'Saving...' : 'Save'}
+            </button>
+          </div>
+        </form>
+      </div>
+    </div>
+  )
+}
+
+function PasswordModal({
+  user,
+  onDone,
+  onClose,
+}: {
+  user: User
+  onDone: () => void
+  onClose: () => void
+}) {
+  const [password, setPassword] = useState('')
+  const [showPassword, setShowPassword] = useState(false)
+  const [error, setError] = useState('')
+  const [loading, setLoading] = useState(false)
+
+  async function handleSubmit(e: FormEvent) {
+    e.preventDefault()
+    setError('')
+    setLoading(true)
+    try {
+      await adminResetPassword(user.user_id, password)
+      onDone()
+    } catch (err) {
+      setError(err instanceof ApiError ? err.message : 'Failed to set password')
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  function suggest() {
+    setPassword(generateStrongPassword())
+    setShowPassword(true)
+  }
+
+  return (
+    <div className="fixed inset-0 bg-midnight-950/70 dark:bg-midnight-950/80 backdrop-blur-sm flex items-center justify-center z-50 px-4">
+      <div className="bg-paper-50 dark:bg-midnight-800 border border-paper-200 dark:border-midnight-600 rounded-2xl w-full max-w-sm shadow-2xl shadow-midnight-950/50">
+        <div className="flex items-center justify-between px-6 py-4 border-b border-paper-200 dark:border-midnight-600">
+          <h2 className="font-display text-base font-semibold text-paper-950 dark:text-paper-100">Set Password</h2>
+          <button onClick={onClose} className="text-paper-400 dark:text-midnight-400 hover:text-paper-800 dark:hover:text-paper-100 text-xl leading-none w-8 h-8 flex items-center justify-center rounded-lg hover:bg-paper-200 dark:hover:bg-midnight-700 transition-all">
+            &times;
+          </button>
+        </div>
+        <form onSubmit={handleSubmit} className="p-6 flex flex-col gap-5">
+          <p className="font-sans text-sm text-paper-600 dark:text-midnight-300">
+            Setting password for{' '}
+            <span className="font-mono font-medium text-paper-950 dark:text-paper-100">{user.login_name}</span>
+          </p>
+          <div className="flex flex-col gap-2">
+            <div className="flex items-center justify-between">
+              <label className={labelCls}>
+                New password{' '}
+                <span className="normal-case tracking-normal font-normal text-paper-400 dark:text-midnight-400">(min 12 chars)</span>
+              </label>
+              <button
+                type="button"
+                onClick={suggest}
+                className="font-sans text-xs text-gold-600 dark:text-gold-400 hover:text-gold-500 dark:hover:text-gold-300 transition-colors"
+              >
+                Suggest
+              </button>
+            </div>
+            <div className="relative">
+              <input
+                type={showPassword ? 'text' : 'password'}
+                value={password}
+                onChange={e => setPassword(e.target.value)}
+                required
+                minLength={12}
+                className={`${inputCls} pr-16`}
+              />
+              <button
+                type="button"
+                onClick={() => setShowPassword(v => !v)}
+                className="absolute right-3 top-1/2 -translate-y-1/2 font-mono text-[0.6rem] uppercase tracking-wider text-paper-500 dark:text-midnight-400 hover:text-paper-800 dark:hover:text-paper-100 transition-colors"
+              >
+                {showPassword ? 'Hide' : 'Show'}
+              </button>
+            </div>
+          </div>
+          {error && (
+            <div className="font-sans text-sm text-rose-600 dark:text-rose-400 bg-rose-950/20 dark:bg-rose-950/40 border border-rose-600/20 dark:border-rose-900/50 rounded-lg px-3.5 py-2.5">
+              {error}
+            </div>
+          )}
+          <div className="flex gap-3">
+            <button type="button" onClick={onClose} className="font-sans flex-1 bg-paper-200 dark:bg-midnight-700 hover:bg-paper-300 dark:hover:bg-midnight-600 text-paper-800 dark:text-paper-300 rounded-lg px-4 py-2.5 text-sm font-medium transition-colors">
+              Cancel
+            </button>
+            <button type="submit" disabled={loading} className="font-sans flex-1 bg-gold-500 hover:bg-gold-400 active:bg-gold-600 disabled:opacity-50 text-midnight-900 rounded-lg px-4 py-2.5 text-sm font-semibold transition-colors">
+              {loading ? 'Setting...' : 'Set password'}
+            </button>
+          </div>
+        </form>
+      </div>
+    </div>
+  )
+}
 
 export default function UsersPanel({ currentUserId }: Props) {
   const [users, setUsers] = useState<User[]>([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState('')
-  const [editingId, setEditingId] = useState<number | null>(null)
-  const [editState, setEditState] = useState<EditState | null>(null)
-  const [saving, setSaving] = useState(false)
-  const [resetUserId, setResetUserId] = useState<number | null>(null)
-  const [resetPassword, setResetPassword] = useState('')
-  const [resetLoading, setResetLoading] = useState(false)
-  const [resetError, setResetError] = useState('')
+  const [editingUser, setEditingUser] = useState<User | null>(null)
+  const [passwordUser, setPasswordUser] = useState<User | null>(null)
   const [deletingId, setDeletingId] = useState<number | null>(null)
   const [apiKeyUserId, setApiKeyUserId] = useState<number | null>(null)
   const [newApiKey, setNewApiKey] = useState<string | null>(null)
@@ -53,47 +267,13 @@ export default function UsersPanel({ currentUserId }: Props) {
     }
   }
 
-  function startEdit(u: User) {
-    setEditingId(u.user_id)
-    setEditState({ user_name: u.user_name, email: u.email, login_name: u.login_name, role: u.role, is_active: u.is_active })
-  }
-
-  function cancelEdit() {
-    setEditingId(null)
-    setEditState(null)
-  }
-
-  async function saveEdit(userId: number) {
-    if (!editState) return
-    setSaving(true)
+  async function handleUnlock(user: User) {
     try {
-      await updateUser(userId, editState)
-      setEditingId(null)
-      setEditState(null)
+      await updateUser(user.user_id, { locked_until: null, failed_login_count: 0 })
       await load()
-      showToast('User updated.')
+      showToast('Account unlocked.')
     } catch (err) {
-      alert(err instanceof ApiError ? err.message : 'Failed to save')
-    } finally {
-      setSaving(false)
-    }
-  }
-
-  async function handleReset(e: FormEvent) {
-    e.preventDefault()
-    if (!resetUserId) return
-    setResetLoading(true)
-    setResetError('')
-    try {
-      await adminResetPassword(resetUserId, resetPassword)
-      setResetUserId(null)
-      setResetPassword('')
-      await load()
-      showToast('Password reset successfully.')
-    } catch (err) {
-      setResetError(err instanceof ApiError ? err.message : 'Failed to reset password')
-    } finally {
-      setResetLoading(false)
+      alert(err instanceof ApiError ? err.message : 'Failed to unlock')
     }
   }
 
@@ -144,7 +324,7 @@ export default function UsersPanel({ currentUserId }: Props) {
   }
 
   if (loading) return (
-    <div className="py-12 text-center">
+    <div className="py-16 text-center">
       <span className="font-mono text-[0.62rem] uppercase tracking-widest text-paper-400 dark:text-midnight-400">Loading...</span>
     </div>
   )
@@ -153,279 +333,138 @@ export default function UsersPanel({ currentUserId }: Props) {
   )
 
   return (
-    <div className="flex flex-col gap-4">
-      {/* Toast */}
+    <>
       {toast && (
         <div className="fixed bottom-5 right-5 font-sans bg-teal-900/90 dark:bg-teal-900/95 text-teal-200 text-xs font-medium px-4 py-2.5 rounded-xl shadow-lg z-50 border border-teal-700/40">
           {toast}
         </div>
       )}
 
-      <div className="bg-paper-50 dark:bg-midnight-800 border border-paper-200 dark:border-midnight-600 rounded-xl overflow-hidden shadow-sm">
-        <div className="px-5 py-3.5 border-b border-paper-200 dark:border-midnight-600 flex items-center justify-between">
-          <h2 className="font-sans text-sm font-semibold text-paper-950 dark:text-paper-100">Users</h2>
-          <span className="font-mono text-[0.62rem] text-paper-400 dark:text-midnight-400 tracking-widest">
-            {users.length} total
-          </span>
-        </div>
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+        {users.map(u => {
+          const isSelf = u.user_id === currentUserId
+          const locked = isLocked(u)
+          return (
+            <div
+              key={u.user_id}
+              className="bg-paper-50 dark:bg-midnight-800 border border-paper-200 dark:border-midnight-600 rounded-xl shadow-sm flex flex-col"
+            >
+              {/* User info */}
+              <div className="px-5 pt-5 pb-3 flex-1">
+                <div className="flex items-start justify-between gap-2">
+                  <div className="flex-1 min-w-0">
+                    <h3 className="font-sans font-semibold text-paper-950 dark:text-paper-100 text-sm leading-snug flex items-center gap-2">
+                      {u.user_name}
+                      {isSelf && (
+                        <span className="font-mono text-[0.55rem] uppercase tracking-wider text-paper-400 dark:text-midnight-500">(you)</span>
+                      )}
+                    </h3>
+                    <p className="font-mono text-xs text-paper-600 dark:text-midnight-300 mt-0.5">@{u.login_name}</p>
+                    <p className="font-sans text-xs text-paper-400 dark:text-midnight-500 mt-0.5 truncate">{u.email}</p>
+                  </div>
+                  <span className={`shrink-0 font-mono text-[0.55rem] uppercase tracking-wider px-2 py-0.5 rounded-full border ${
+                    u.role === 'admin'
+                      ? 'bg-gold-900/15 dark:bg-gold-950/60 text-gold-600 dark:text-gold-400 border-gold-600/20 dark:border-gold-700/40'
+                      : 'bg-paper-200 dark:bg-midnight-700 text-paper-500 dark:text-midnight-300 border-paper-300 dark:border-midnight-600'
+                  }`}>
+                    {u.role}
+                  </span>
+                </div>
 
-        <div className="overflow-x-auto">
-          <table className="w-full text-sm">
-            <thead>
-              <tr className="border-b border-paper-200 dark:border-midnight-600 bg-paper-100/50 dark:bg-midnight-750/40">
-                <th className="px-5 py-3 text-left font-mono text-[0.6rem] uppercase tracking-widest text-paper-500 dark:text-midnight-400 font-medium">
-                  Display name
-                </th>
-                <th className="px-5 py-3 text-left font-mono text-[0.6rem] uppercase tracking-widest text-paper-500 dark:text-midnight-400 font-medium">
-                  Login
-                </th>
-                <th className="px-5 py-3 text-left font-mono text-[0.6rem] uppercase tracking-widest text-paper-500 dark:text-midnight-400 font-medium hidden md:table-cell">
-                  Email
-                </th>
-                <th className="px-5 py-3 text-left font-mono text-[0.6rem] uppercase tracking-widest text-paper-500 dark:text-midnight-400 font-medium">
-                  Role
-                </th>
-                <th className="px-5 py-3 text-left font-mono text-[0.6rem] uppercase tracking-widest text-paper-500 dark:text-midnight-400 font-medium">
-                  Status
-                </th>
-                <th className="px-5 py-3 text-left font-mono text-[0.6rem] uppercase tracking-widest text-paper-500 dark:text-midnight-400 font-medium hidden lg:table-cell">
-                  Updated
-                </th>
-                <th className="px-5 py-3 text-left font-mono text-[0.6rem] uppercase tracking-widest text-paper-500 dark:text-midnight-400 font-medium hidden xl:table-cell">
-                  API Key
-                </th>
-                <th className="px-5 py-3 w-36" />
-              </tr>
-            </thead>
-            <tbody>
-              {users.map(u => {
-                const isEditing = editingId === u.user_id
-                const isSelf = u.user_id === currentUserId
-                return (
-                  <tr key={u.user_id} className="border-b border-paper-200 dark:border-midnight-700 last:border-0 hover:bg-paper-100 dark:hover:bg-midnight-750/60 transition-colors">
-                    <td className="px-5 py-3">
-                      {isEditing && editState ? (
-                        <input
-                          value={editState.user_name}
-                          onChange={e => setEditState({ ...editState, user_name: e.target.value })}
-                          className={`${editInputCls} w-32`}
-                        />
-                      ) : (
-                        <span className="font-sans text-paper-950 dark:text-paper-100 font-medium">{u.user_name}</span>
-                      )}
-                    </td>
-                    <td className="px-5 py-3">
-                      {isEditing && editState ? (
-                        <input
-                          value={editState.login_name}
-                          onChange={e => setEditState({ ...editState, login_name: e.target.value })}
-                          className={`${editInputCls} w-28`}
-                        />
-                      ) : (
-                        <span className="font-mono text-xs text-paper-600 dark:text-midnight-300">{u.login_name}</span>
-                      )}
-                    </td>
-                    <td className="px-5 py-3 hidden md:table-cell">
-                      {isEditing && editState ? (
-                        <input
-                          value={editState.email}
-                          onChange={e => setEditState({ ...editState, email: e.target.value })}
-                          className={`${editInputCls} w-44`}
-                        />
-                      ) : (
-                        <span className="font-sans text-xs text-paper-500 dark:text-midnight-400">{u.email}</span>
-                      )}
-                    </td>
-                    <td className="px-5 py-3">
-                      {isEditing && editState && !isSelf ? (
-                        <select
-                          value={editState.role}
-                          onChange={e => setEditState({ ...editState, role: e.target.value })}
-                          className={editInputCls}
-                        >
-                          <option value="normal">normal</option>
-                          <option value="admin">admin</option>
-                        </select>
-                      ) : (
-                        <span className={`font-mono text-[0.58rem] uppercase tracking-wider px-2.5 py-1 rounded-full border ${
-                          u.role === 'admin'
-                            ? 'bg-gold-900/15 dark:bg-gold-950/60 text-gold-600 dark:text-gold-400 border-gold-600/20 dark:border-gold-700/40'
-                            : 'bg-paper-200 dark:bg-midnight-700 text-paper-500 dark:text-midnight-300 border-paper-300 dark:border-midnight-600'
-                        }`}>
-                          {u.role}
-                        </span>
-                      )}
-                    </td>
-                    <td className="px-5 py-3">
-                      {isEditing && editState && !isSelf ? (
-                        <select
-                          value={String(editState.is_active)}
-                          onChange={e => setEditState({ ...editState, is_active: e.target.value === 'true' })}
-                          className={editInputCls}
-                        >
-                          <option value="true">Active</option>
-                          <option value="false">Inactive</option>
-                        </select>
-                      ) : (
-                        <span className={`font-mono text-[0.58rem] uppercase tracking-wider px-2.5 py-1 rounded-full border ${
-                          u.is_active
-                            ? 'bg-teal-900/15 dark:bg-teal-900/30 text-teal-600 dark:text-teal-400 border-teal-600/20 dark:border-teal-900/50'
-                            : 'bg-paper-200 dark:bg-midnight-700 text-paper-500 dark:text-midnight-300 border-paper-300 dark:border-midnight-600'
-                        }`}>
-                          {u.is_active ? 'Active' : 'Inactive'}
-                        </span>
-                      )}
-                    </td>
-                    <td className="px-5 py-3 hidden lg:table-cell">
-                      <span className="font-mono text-[0.62rem] text-paper-400 dark:text-midnight-500">
-                        {fmtDate(u.updated_at)}
-                      </span>
-                    </td>
-                    <td className="px-5 py-3 hidden xl:table-cell">
-                      {u.api_key_prefix ? (
-                        <span className="font-mono text-[0.62rem] text-paper-500 dark:text-midnight-400 bg-paper-100 dark:bg-midnight-700 border border-paper-200 dark:border-midnight-600 rounded px-2 py-0.5">
-                          {u.api_key_prefix}…
-                        </span>
-                      ) : (
-                        <span className="font-mono text-[0.6rem] text-paper-300 dark:text-midnight-600">none</span>
-                      )}
-                    </td>
-                    <td className="px-5 py-3">
-                      <div className="flex gap-3 items-center">
-                        {isEditing ? (
-                          <>
-                            <button
-                              onClick={() => saveEdit(u.user_id)}
-                              disabled={saving}
-                              className="font-sans text-xs text-gold-600 dark:text-gold-400 hover:text-gold-500 dark:hover:text-gold-300 disabled:opacity-40 transition-colors font-medium"
-                            >
-                              {saving ? '...' : 'Save'}
-                            </button>
-                            <button
-                              onClick={cancelEdit}
-                              className="font-sans text-xs text-paper-500 dark:text-midnight-400 hover:text-paper-800 dark:hover:text-paper-300 transition-colors"
-                            >
-                              Cancel
-                            </button>
-                          </>
-                        ) : (
-                          <>
-                            <button
-                              onClick={() => startEdit(u)}
-                              className="font-sans text-xs text-paper-500 dark:text-midnight-400 hover:text-paper-950 dark:hover:text-paper-100 transition-colors"
-                            >
-                              Edit
-                            </button>
-                            <button
-                              onClick={() => { setResetUserId(u.user_id); setResetError(''); setResetPassword('') }}
-                              className="font-sans text-xs text-paper-500 dark:text-midnight-400 hover:text-gold-600 dark:hover:text-gold-400 transition-colors"
-                            >
-                              Reset pw
-                            </button>
-                            <button
-                              onClick={() => handleGenerateApiKey(u.user_id)}
-                              disabled={apiKeyUserId === u.user_id}
-                              className="font-sans text-xs text-paper-500 dark:text-midnight-400 hover:text-teal-600 dark:hover:text-teal-400 disabled:opacity-40 transition-colors"
-                              title={u.api_key_prefix ? 'Regenerate API key' : 'Generate API key'}
-                            >
-                              {apiKeyUserId === u.user_id ? '...' : u.api_key_prefix ? 'Regen key' : 'Gen key'}
-                            </button>
-                            {u.api_key_prefix && (
-                              <button
-                                onClick={() => handleRevokeApiKey(u.user_id, u.login_name)}
-                                disabled={apiKeyUserId === u.user_id}
-                                className="font-sans text-xs text-paper-400 dark:text-midnight-500 hover:text-rose-600 dark:hover:text-rose-400 disabled:opacity-40 transition-colors"
-                              >
-                                Revoke
-                              </button>
-                            )}
-                            {!isSelf && (
-                              <button
-                                onClick={() => handleDelete(u.user_id, u.login_name)}
-                                disabled={deletingId === u.user_id}
-                                className="font-sans text-xs text-paper-400 dark:text-midnight-500 hover:text-rose-600 dark:hover:text-rose-400 disabled:opacity-40 transition-colors"
-                              >
-                                {deletingId === u.user_id ? '...' : 'Delete'}
-                              </button>
-                            )}
-                          </>
-                        )}
-                      </div>
-                    </td>
-                  </tr>
-                )
-              })}
-            </tbody>
-          </table>
-        </div>
+                {/* Status badges */}
+                <div className="flex flex-wrap gap-2 mt-3">
+                  <span className={`font-mono text-[0.58rem] uppercase tracking-wider px-2 py-0.5 rounded-full border ${
+                    u.is_active
+                      ? 'bg-teal-900/15 dark:bg-teal-900/30 text-teal-600 dark:text-teal-400 border-teal-600/20 dark:border-teal-900/50'
+                      : 'bg-paper-200 dark:bg-midnight-700 text-paper-500 dark:text-midnight-300 border-paper-300 dark:border-midnight-600'
+                  }`}>
+                    {u.is_active ? 'Active' : 'Inactive'}
+                  </span>
+                  {locked && (
+                    <span className="font-mono text-[0.58rem] uppercase tracking-wider px-2 py-0.5 rounded-full border bg-rose-950/20 dark:bg-rose-950/40 text-rose-600 dark:text-rose-400 border-rose-600/20 dark:border-rose-900/50">
+                      Locked
+                    </span>
+                  )}
+                  {u.api_key_prefix && (
+                    <code className="font-mono text-[0.58rem] bg-paper-100 dark:bg-midnight-700 border border-paper-200 dark:border-midnight-600 rounded px-1.5 py-0.5 text-paper-500 dark:text-midnight-400">
+                      {u.api_key_prefix}...
+                    </code>
+                  )}
+                </div>
+              </div>
+
+              {/* Actions */}
+              <div className="px-5 py-3 border-t border-paper-200 dark:border-midnight-700 flex flex-wrap items-center gap-x-3 gap-y-1">
+                <button
+                  onClick={() => setEditingUser(u)}
+                  className="font-sans text-xs font-medium text-gold-600 dark:text-gold-400 hover:text-gold-500 dark:hover:text-gold-300 transition-colors"
+                >
+                  Edit
+                </button>
+                <button
+                  onClick={() => setPasswordUser(u)}
+                  className="font-sans text-xs text-paper-500 dark:text-midnight-400 hover:text-paper-950 dark:hover:text-paper-100 transition-colors"
+                >
+                  Password
+                </button>
+                {locked && (
+                  <button
+                    onClick={() => handleUnlock(u)}
+                    className="font-sans text-xs text-rose-600 dark:text-rose-400 hover:text-rose-500 dark:hover:text-rose-300 transition-colors"
+                  >
+                    Unlock
+                  </button>
+                )}
+                <button
+                  onClick={() => handleGenerateApiKey(u.user_id)}
+                  disabled={apiKeyUserId === u.user_id}
+                  className="font-sans text-xs text-paper-500 dark:text-midnight-400 hover:text-teal-600 dark:hover:text-teal-400 disabled:opacity-40 transition-colors"
+                  title={u.api_key_prefix ? 'Regenerate API key' : 'Generate API key'}
+                >
+                  {apiKeyUserId === u.user_id ? '...' : u.api_key_prefix ? 'Regen key' : 'Gen key'}
+                </button>
+                {u.api_key_prefix && (
+                  <button
+                    onClick={() => handleRevokeApiKey(u.user_id, u.login_name)}
+                    disabled={apiKeyUserId === u.user_id}
+                    className="font-sans text-xs text-paper-400 dark:text-midnight-500 hover:text-rose-600 dark:hover:text-rose-400 disabled:opacity-40 transition-colors"
+                  >
+                    Revoke key
+                  </button>
+                )}
+                {!isSelf && (
+                  <button
+                    onClick={() => handleDelete(u.user_id, u.login_name)}
+                    disabled={deletingId === u.user_id}
+                    className="font-sans text-xs text-paper-400 dark:text-midnight-500 hover:text-rose-600 dark:hover:text-rose-400 disabled:opacity-40 transition-colors ml-auto"
+                  >
+                    {deletingId === u.user_id ? '...' : 'Delete'}
+                  </button>
+                )}
+              </div>
+            </div>
+          )
+        })}
       </div>
 
-      {/* API key modal — shown once after generation */}
-      {newApiKey && (
-        <ApiKeyModal apiKey={newApiKey} onClose={() => setNewApiKey(null)} />
+      {newApiKey && <ApiKeyModal apiKey={newApiKey} onClose={() => setNewApiKey(null)} />}
+
+      {editingUser && (
+        <EditUserModal
+          user={editingUser}
+          isSelf={editingUser.user_id === currentUserId}
+          onSaved={async () => { setEditingUser(null); await load(); showToast('User updated.') }}
+          onClose={() => setEditingUser(null)}
+        />
       )}
 
-      {/* Password reset modal */}
-      {resetUserId !== null && (
-        <div className="fixed inset-0 bg-midnight-950/70 dark:bg-midnight-950/80 backdrop-blur-sm flex items-center justify-center z-50 px-4">
-          <div className="bg-paper-50 dark:bg-midnight-800 border border-paper-200 dark:border-midnight-600 rounded-2xl w-full max-w-sm shadow-2xl shadow-midnight-950/50">
-            <div className="flex items-center justify-between px-6 py-4 border-b border-paper-200 dark:border-midnight-600">
-              <h2 className="font-display text-base font-semibold text-paper-950 dark:text-paper-100">
-                Reset Password
-              </h2>
-              <button
-                onClick={() => setResetUserId(null)}
-                className="text-paper-400 dark:text-midnight-400 hover:text-paper-800 dark:hover:text-paper-100 text-xl leading-none w-8 h-8 flex items-center justify-center rounded-lg hover:bg-paper-200 dark:hover:bg-midnight-700 transition-all"
-              >
-                &times;
-              </button>
-            </div>
-            <form onSubmit={handleReset} className="p-6 flex flex-col gap-5">
-              <p className="font-sans text-sm text-paper-600 dark:text-midnight-300">
-                Resetting password for:{' '}
-                <span className="font-mono font-medium text-paper-950 dark:text-paper-100">
-                  {users.find(u => u.user_id === resetUserId)?.login_name}
-                </span>
-              </p>
-              <div className="flex flex-col gap-2">
-                <label className={labelCls}>
-                  New password{' '}
-                  <span className="normal-case tracking-normal font-normal text-paper-400 dark:text-midnight-400">(min 12 chars)</span>
-                </label>
-                <input
-                  type="password"
-                  value={resetPassword}
-                  onChange={e => setResetPassword(e.target.value)}
-                  required
-                  minLength={12}
-                  className={modalInputCls}
-                />
-              </div>
-              {resetError && (
-                <div className="font-sans text-sm text-rose-600 dark:text-rose-400 bg-rose-950/20 dark:bg-rose-950/40 border border-rose-600/20 dark:border-rose-900/50 rounded-lg px-3.5 py-2.5">
-                  {resetError}
-                </div>
-              )}
-              <div className="flex gap-3">
-                <button
-                  type="button"
-                  onClick={() => setResetUserId(null)}
-                  className="font-sans flex-1 bg-paper-200 dark:bg-midnight-700 hover:bg-paper-300 dark:hover:bg-midnight-600 text-paper-800 dark:text-paper-300 rounded-lg px-4 py-2.5 text-sm font-medium transition-colors"
-                >
-                  Cancel
-                </button>
-                <button
-                  type="submit"
-                  disabled={resetLoading}
-                  className="font-sans flex-1 bg-gold-500 hover:bg-gold-400 active:bg-gold-600 disabled:opacity-50 text-midnight-900 rounded-lg px-4 py-2.5 text-sm font-semibold transition-colors"
-                >
-                  {resetLoading ? 'Resetting...' : 'Reset'}
-                </button>
-              </div>
-            </form>
-          </div>
-        </div>
+      {passwordUser && (
+        <PasswordModal
+          user={passwordUser}
+          onDone={() => { setPasswordUser(null); showToast('Password updated.') }}
+          onClose={() => setPasswordUser(null)}
+        />
       )}
-    </div>
+    </>
   )
 }
